@@ -1,0 +1,605 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+
+# Bill of materials rules content
+
+
+Admin BoM Workflow Structure!!!! 
+
+1. Login and Dashboard Access 
+
+Admin logs in and lands on the Admin Dashboard. 
+
+Dashboard displays:  
+
+Overview of all projects 
+
+Notifications (low stock, pending requests, transfers, returns) 
+
+Quick links to BoM management, reports, and user management 
+
+Shape 
+
+2. Project and BoM Management 
+
+Admin selects a project to view or manage its BoM. 
+
+System displays:  
+
+Full BoM for the project (materials, categories, quantities, usage, remaining, low-stock indicators) 
+
+Options to adjust allocations, correct errors, or set thresholds 
+
+Shape 
+
+3. Material Request Handling 
+
+Admin reviews new material requests (from project managers/users). 
+
+For each request:  
+
+View material, quantity, reason, and attachments 
+
+Decide: Approve, Deny, or Adjust Quantity 
+
+(Optional) Add comment for decision 
+
+System updates:  
+
+If approved: Updates project BoM, notifies requester 
+
+If denied: Notifies requester with reason 
+
+All actions logged in audit trail 
+
+Shape 
+
+4. Material Transfer Handling 
+
+Admin reviews transfer requests (move material between projects). 
+
+For each transfer:  
+
+View source/destination projects, material, quantity, reason 
+
+Decide: Approve or Deny 
+
+(Optional) Add comment 
+
+System updates:  
+
+If approved: Updates BoMs for both projects, notifies involved users 
+
+If denied: Notifies requester 
+
+All actions logged 
+
+Shape 
+
+5. Material Return Handling 
+
+Admin reviews return requests (unused/damaged material). 
+
+For each return:  
+
+View material, quantity, reason, attachments 
+
+Decide: Approve or Deny 
+
+(Optional) Add comment 
+
+System updates:  
+
+If approved: Updates project BoM, notifies requester 
+
+If denied: Notifies requester 
+
+All actions logged 
+
+Shape 
+
+6. Material Catalog Management 
+
+Admin manages master material list:  
+
+Add new materials (name, category, unit, cost, supplier) 
+
+Edit or deactivate materials 
+
+Categorize materials for easy searching 
+
+Shape 
+
+7. Reporting and Analysis 
+
+Admin generates reports:  
+
+BoM per project or company-wide 
+
+Material usage, costs, trends 
+
+Export options (PDF, Excel) 
+
+Admin reviews audit trail:  
+
+All user/system actions for traceability 
+
+Shape 
+
+8. User and Permission Management 
+
+Admin manages users:  
+
+Assign project managers 
+
+Set or revoke permissions 
+
+Define user roles 
+
+Shape 
+
+9. Notifications and Alerts 
+
+Admin receives notifications:  
+
+Low stock 
+
+New/pending requests 
+
+Approvals/denials 
+
+System alerts 
+
+Shape 
+
+10. Logout or Switch Project 
+
+Admin can log out or switch to another project to repeat the workflow. 
+
+Shape 
+
+Textual Flowchart Representation 
+
+[Admin Login] 
+
+   | 
+
+   v 
+
+[Dashboard Overview] 
+
+   | 
+
+   v 
+
+[Select Project] <-----------------------------+ 
+
+   |                                          | 
+
+   v                                          | 
+
+[View/Manage BoM]                             | 
+
+   |                                          | 
+
+   v                                          | 
+
+[Handle Requests]                             | 
+
+   |                                          | 
+
+   +--> [Material Requests]                   | 
+
+   |        |                                 | 
+
+   |   [Approve/Deny/Adjust]                  | 
+
+   |        |                                 | 
+
+   |   [Update BoM & Notify]                  | 
+
+   |                                          | 
+
+   +--> [Transfer Requests]                   | 
+
+   |        |                                 | 
+
+   |   [Approve/Deny]                         | 
+
+   |        |                                 | 
+
+   |   [Update BoMs & Notify]                 | 
+
+   |                                          | 
+
+   +--> [Return Requests]                     | 
+
+   |        |                                 | 
+
+   |   [Approve/Deny]                         | 
+
+   |        |                                 | 
+
+   |   [Update BoM & Notify]                  | 
+
+   |                                          | 
+
+   v                                          | 
+
+[Manage Material Catalog]                     | 
+
+   |                                          | 
+
+   v                                          | 
+
+[Generate Reports/Audit Trail]                | 
+
+   |                                          | 
+
+   v                                          | 
+
+[Manage Users/Permissions]                    | 
+
+   |                                          | 
+
+   v                                          | 
+
+[Receive Notifications/Alerts]                | 
+
+   |                                          | 
+
+   v                                          | 
+
+[Logout or Switch Project] -------------------+ 
+
+Shape 
+
+Key Admin Functions at a Glance 
+
+Monitor: All projects, materials, and requests in real time. 
+
+Approve/Reject: Material requests, transfers, and returns. 
+
+Edit: BoM allocations, material catalog, and user permissions. 
+
+Report: Generate and export detailed reports. 
+
+Audit: Review all actions for compliance and traceability. 
+
+Admin BoM flowchart!!! 
+
++------------------------+ 
+
+|      ADMIN LOGIN       | 
+
++------------------------+ 
+
+            | 
+
+            v 
+
++------------------------+ 
+
+|   DASHBOARD OVERVIEW   | 
+
+| (Projects, Alerts,     | 
+
+|  Pending Requests)     | 
+
++------------------------+ 
+
+            | 
+
+            v 
+
++------------------------+ 
+
+|    SELECT PROJECT      |<-----------------+ 
+
++------------------------+                  | 
+
+            |                               | 
+
+            v                               | 
+
++------------------------+                  | 
+
+|   VIEW/MANAGE BOM      |                  | 
+
+| (Materials, Quantities,|                  | 
+
+|  Usage, Remaining)     |                  | 
+
++------------------------+                  | 
+
+            |                               | 
+
+            v                               | 
+
++------------------------+                  | 
+
+|    HANDLE REQUESTS     |                  | 
+
++------------------------+                  | 
+
+            |                               | 
+
+    +-------+-------+-------+               | 
+
+    |       |       |       |               | 
+
+    v       v       v       |               | 
+
++--------+ +--------+ +--------+            | 
+
+|MATERIAL| |TRANSFER| |RETURN  |            | 
+
+|REQUESTS| |REQUESTS| |REQUESTS|            | 
+
++--------+ +--------+ +--------+            | 
+
+    |           |           |               | 
+
+    v           v           v               | 
+
++--------+   +--------+   +--------+        | 
+
+|APPROVE/|   |APPROVE/|   |APPROVE/|        | 
+
+|DENY/   |   |DENY    |   |DENY    |        | 
+
+|ADJUST  |   |        |   |        |        | 
+
++--------+   +--------+   +--------+        | 
+
+    |           |           |               | 
+
+    v           v           v               | 
+
++--------+   +--------+   +--------+        | 
+
+|UPDATE  |   |UPDATE  |   |UPDATE  |        | 
+
+|BOM &   |   |BOMs &  |   |BOM &   |        | 
+
+|NOTIFY  |   |NOTIFY  |   |NOTIFY  |        | 
+
++--------+   +--------+   +--------+        | 
+
+    |           |           |               | 
+
+    +-----------+-----------+               | 
+
+            |                               | 
+
+            v                               | 
+
++------------------------+                  | 
+
+| MANAGE MATERIAL CATALOG|                  | 
+
+| (Add, Edit, Categorize)|                  | 
+
++------------------------+                  | 
+
+            |                               | 
+
+            v                               | 
+
++------------------------+                  | 
+
+| GENERATE REPORTS       |                  | 
+
+| (Usage, Costs, Audit)  |                  | 
+
++------------------------+                  | 
+
+            |                               | 
+
+            v                               | 
+
++------------------------+                  | 
+
+| MANAGE USERS/PERMISSIONS|                 | 
+
+| (Roles, Access Rights)  |                 | 
+
++------------------------+                  | 
+
+            |                               | 
+
+            v                               | 
+
++------------------------+                  | 
+
+| RECEIVE NOTIFICATIONS  |                  | 
+
+| (Alerts, Updates)      |                  | 
+
++------------------------+                  | 
+
+            |                               | 
+
+            v                               | 
+
++------------------------+                  | 
+
+| LOGOUT OR SWITCH PROJECT|------------------+ 
+
++------------------------+ 
+
+Key Decision Points and Processes: 
+
+Dashboard Overview: Admin views all projects, pending requests, and alerts. 
+
+Project Selection: Admin chooses which project to manage. 
+
+View/Manage BoM: Admin reviews the complete BoM for the selected project. 
+
+Handle Requests: Admin processes three types of requests: 
+
+Material Requests: Review and approve/deny/adjust requests for more materials. 
+
+Transfer Requests: Review and approve/deny requests to move materials between projects. 
+
+Return Requests: Review and approve/deny requests to return unused or damaged materials. 
+
+Manage Material Catalog: Admin maintains the master list of materials. 
+
+Generate Reports: Admin creates and exports reports on material usage, costs, and audit trails. 
+
+Manage Users/Permissions: Admin sets user roles and access rights. 
+
+Receive Notifications: Admin monitors system alerts and updates. 
+
+Logout or Switch Project: Admin can exit or select another project to manage. 
+
+Admin: BoM!!!  
+
+Admin View and Functions: Bill of Materials (BoM) 
+
+The admin has a comprehensive view and control over the entire BoM system, ensuring data accuracy, managing material flow, and handling exceptions. 
+
+1. Accessing the Admin BoM Dashboard 
+
+Upon logging in with admin credentials, the admin has access to a dedicated BoM dashboard. This dashboard provides a high-level overview of all projects, materials, and requests. 
+
+2. Project Overview 
+
+The admin can view a list of all active projects, with key details such as: 
+
+Project name and location 
+
+Project manager assigned 
+
+Overall BoM status (e.g., total materials, total value, low-stock alerts) 
+
+Quick links to view the BoM for each project 
+
+3. Material Catalog Management 
+
+The admin can manage the master material catalog, which serves as the source for all project BoMs. This includes: 
+
+Adding new materials: Name, category, unit of measure, standard cost, supplier information. 
+
+Editing existing materials: Updating details, costs, or supplier information. 
+
+Deactivating materials: Removing materials that are no longer used (while preserving historical data). 
+
+Categorizing materials: Ensuring materials are properly categorized for easy searching and reporting. 
+
+4. Project-Specific BoM Management 
+
+The admin can access and manage the BoM for each individual project. This includes: 
+
+Viewing the current BoM: Material list, quantities, usage, and remaining stock. 
+
+Adjusting material allocations: Manually adding or removing materials from a project's BoM. 
+
+Correcting errors: Fixing incorrect usage logs or quantity entries. 
+
+Setting low-stock thresholds: Customizing the low-stock alert levels for each material in a project. 
+
+5. Material Request Management 
+
+The admin is responsible for reviewing and processing all material requests submitted by project managers or site supervisors. This involves: 
+
+Receiving notifications: Real-time alerts for new material requests. 
+
+Reviewing request details: Material, quantity, reason, and any attached photos. 
+
+Approving or denying requests: Based on project needs, budget, and material availability. 
+
+Adjusting quantities: Modifying the requested quantity if necessary. 
+
+Adding comments: Providing reasons for approval or denial. 
+
+Updating the BoM: Automatically updating the project's BoM upon approval. 
+
+6. Material Transfer Management 
+
+The admin oversees the transfer of materials between projects. This includes: 
+
+Reviewing transfer requests: Material, quantity, source project, destination project, and reason. 
+
+Approving or denying transfers: Based on material availability and project needs. 
+
+Updating BoMs: Automatically updating the BoMs for both the source and destination projects upon approval. 
+
+7. Material Return Management 
+
+The admin handles the return of unused or damaged materials. This involves: 
+
+Reviewing return requests: Material, quantity, reason, and any attached photos. 
+
+Approving or denying returns: Based on the condition of the material and company policy. 
+
+Updating the BoM: Adjusting the project's BoM to reflect the returned materials. 
+
+Managing disposal: Coordinating the disposal or restocking of returned materials. 
+
+8. Reporting and Analysis 
+
+The admin can generate reports and analyze BoM data to gain insights into material usage, costs, and trends. This includes: 
+
+Generating BoM reports: For individual projects or all projects, showing material lists, quantities, and costs. 
+
+Analyzing material usage: Identifying high-usage materials, potential waste, and cost-saving opportunities. 
+
+Tracking material costs: Monitoring material prices and identifying cost fluctuations. 
+
+Identifying trends: Spotting patterns in material usage across projects. 
+
+9. User Management 
+
+The admin can manage user access and permissions related to the BoM. This includes: 
+
+Assigning project managers to projects. 
+
+Granting or revoking BoM access for users. 
+
+Setting user roles: Defining what actions each user can perform within the BoM system. 
+
+10. Notifications and Alerts 
+
+The admin receives notifications for: 
+
+Low-stock alerts: When materials are running low in any project. 
+
+Material requests: New requests submitted by project managers. 
+
+Transfer requests: Requests to move materials between projects. 
+
+Return requests: Requests to return unused or damaged materials. 
+
+11. Audit Trail 
+
+The admin can access a complete audit trail of all BoM-related actions, including: 
+
+User actions: Who did what, when, and from where. 
+
+System actions: Automatic updates, notifications, and alerts. 
+
+Data changes: Before and after values for any modifications to the BoM. 
+
+Shape 
+
+Key Responsibilities 
+
+Data Accuracy: Ensuring the BoM data is accurate and up-to-date. 
+
+Material Flow: Managing the flow of materials between projects and ensuring efficient usage. 
+
+Exception Handling: Addressing material requests, transfers, and returns in a timely and effective manner. 
+
+Cost Control: Monitoring material costs and identifying cost-saving opportunities. 
+
+System Integrity: Maintaining the integrity and security of the BoM system. 
+
+ 
+ 
+
+ 

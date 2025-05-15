@@ -1,0 +1,180 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+
+# Your rule content
+
+- You can @ files here
+- You can use markdown but dont have to
+
+FLUTTER BEST PRACTICE RULES (FOR RESPONSIVE, USER-FRIENDLY DEVELOPMENT)
+🧠 GENERAL PRINCIPLES
+Follow the Single Responsibility Principle (SRP)
+Each widget or class should do one job only. Split UI logic from state and layout.
+
+Use Meaningful, Consistent Naming
+Stick to Dart conventions (camelCase for variables, PascalCase for widgets/classes).
+
+Write Clean, Readable, and Formatted Code
+Format with flutter format . or use your IDE’s formatter.
+
+Comment Smartly
+Comment why, not what—write self-explanatory code and add comments only for complex logic.
+
+📱 RESPONSIVE UI RULES
+Always Design for Responsiveness
+Use MediaQuery, LayoutBuilder, or packages like flutter_screenutil or responsive_builder.
+
+Avoid Fixed Width/Height — Use Flex Widgets
+Use Flexible, Expanded, Wrap, or FittedBox for dynamic layout resizing.
+
+Test on Multiple Screen Sizes
+Simulate devices in Chrome dev tools or with different emulator sizes.
+
+Wrap Content in SingleChildScrollView Where Needed
+Prevent overflow and support scrolling on small screens.
+
+Use SafeArea
+Prevent UI collisions with system UI elements (notches, status bars).
+
+🧩 REUSABLE COMPONENT RULES
+Create Reusable Components (Widgets/Helpers)
+
+Extract repeating widgets (e.g. buttons, form fields, containers).
+
+Place reusable widgets in /widgets or /components folder.
+
+Example: PrimaryButton, ResponsiveContainer, CustomTextField.
+
+Use a Central TextStyle File
+Create a text_styles.dart and define styles like:
+
+dart
+Copy
+Edit
+class AppTextStyles {
+  static const heading = TextStyle(fontSize: 20, fontWeight: FontWeight.bold);
+  static const body = TextStyle(fontSize: 16);
+  static const label = TextStyle(fontSize: 14, color: Colors.grey);
+}
+Use a color_theme.dart for All Colors
+
+dart
+Copy
+Edit
+class AppColors {
+  static const primary = Color(0xFF1A73E8);
+  static const secondary = Color(0xFFFFA726);
+  static const background = Color(0xFFF5F5F5);
+  static const textDark = Color(0xFF212121);
+}
+Create a utilities.dart File
+
+Add helper methods, reusable paddings, margins, validators, etc.
+
+dart
+Copy
+Edit
+class Utils {
+  static EdgeInsets pagePadding = const EdgeInsets.symmetric(horizontal: 16, vertical: 20);
+  static String capitalize(String text) => text[0].toUpperCase() + text.substring(1);
+}
+Theme Your App Consistently
+
+Use ThemeData in main.dart:
+
+dart
+Copy
+Edit
+theme: ThemeData(
+  primaryColor: AppColors.primary,
+  textTheme: TextTheme(
+    headline6: AppTextStyles.heading,
+    bodyText2: AppTextStyles.body,
+  ),
+),
+💡 UI/UX RULES
+Consistent Theme & Typography
+
+Touch Feedback: Use InkWell/GestureDetector with visual cues.
+
+Inline & SnackBar Error Messages for user input.
+
+Accessible & Legible Text Sizes with scalable font handling (MediaQuery.textScaleFactor if needed).
+
+🔁 STATE MANAGEMENT & PERFORMANCE
+Use const Where Possible
+Improves performance by avoiding rebuilds.
+
+Pick the Right State Management
+
+Small apps: setState
+
+Mid-large apps: Provider, Riverpod, GetX, Bloc, etc.
+
+Dispose Controllers Properly
+Always call .dispose() in StatefulWidget.
+
+Don’t Rebuild Unnecessary Widgets
+Use ValueListenableBuilder, Selector, or Consumer wisely.
+
+📦 PACKAGES & DEPENDENCIES
+Use Stable & Maintained Packages
+
+Check version history, GitHub activity, and pub.dev score.
+
+Audit Packages
+
+Use flutter pub outdated to manage updates regularly.
+
+Avoid Bloated Dependencies
+
+Don’t install packages for tiny tasks that could be written with a few lines of Dart.
+
+📁 FILE & FOLDER ORGANIZATION
+arduino
+Copy
+Edit
+lib/
+ ├── main.dart
+ ├── core/
+ │    ├── theme/
+ │    │    ├── color_theme.dart
+ │    │    └── text_styles.dart
+ │    └── utilities/
+ │         └── utilities.dart
+ ├── widgets/
+ │    ├── buttons/
+ │    ├── forms/
+ │    └── common/
+ ├── features/
+ │    ├── home/
+ │    ├── auth/
+ │    └── profile/
+🧪 TESTING RULES
+Write Widget Tests for UIs
+
+Write Unit Tests for Business Logic
+
+Use Golden Tests for Layout Consistency
+
+Test Responsiveness on Real Devices + Emulators
+
+🤖 CHAT AGENT RULES (WHEN USING CLAUDE OR CHATGPT)
+Be Explicit with Prompts
+
+Example: “Give me a reusable Flutter form field with validation and responsive width.”
+
+Request Explanation with Code
+
+Helps in learning and catching mistakes.
+
+Review and Refactor Suggested Code
+
+Don’t blindly copy-paste—verify it fits your architecture and logic.
+
+Ask for Optimized Versions
+
+Ask: “Can you make this more efficient?” or “Can this be made more reusable?”
