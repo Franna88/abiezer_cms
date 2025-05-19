@@ -29,6 +29,12 @@ class AppTextStyles {
     color: AppColors.textPrimary,
   );
 
+  static const heading5 = TextStyle(
+    fontSize: 16,
+    fontWeight: FontWeight.w600,
+    color: AppColors.textPrimary,
+  );
+
   static const headingMedium = TextStyle(
     fontSize: 22,
     fontWeight: FontWeight.w600,

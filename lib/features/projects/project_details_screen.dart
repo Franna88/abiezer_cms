@@ -18,6 +18,7 @@ import 'widgets/project_info_card.dart';
 import 'widgets/project_status_update_dialog.dart';
 import 'widgets/project_team_card.dart';
 import 'widgets/project_tabs.dart';
+import '../bom/bom_screen.dart';
 
 // Within the file, add Utils class before the class definitions
 
@@ -304,20 +305,13 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen>
   }
 
   void _navigateToBom() {
-    // Instead of navigating to a general BoM route, we'll create a detailed BoM view for this specific project
+    // Navigate to the new BomTabsPage
     Navigator.of(context).push(
       MaterialPageRoute(
         builder:
-            (context) => _BillOfMaterialsScreen(
+            (context) => BomScreen(
               projectId: widget.projectId,
-              project: _project,
-              projectBom: _projectBom,
               currentUser: widget.currentUser,
-              onBomUpdated: (updatedBom) {
-                setState(() {
-                  _projectBom = updatedBom;
-                });
-              },
             ),
       ),
     );

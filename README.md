@@ -14,6 +14,8 @@ Abiezer Construction CMS is a powerful materials management solution designed sp
 - **Material Transfer Workflow**: Transfer materials between projects with approval tracking
 - **Material Return Management**: Process and track returned unused or damaged materials
 - **Inventory Management**: Monitor stock levels with customizable low-stock alerts
+- **Purchase Tracking**: Track material purchases and expenditures
+- **Historical Data**: View project and material history for audit and analysis
 - **Responsive Design**: Works seamlessly across mobile, tablet, and desktop
 - **Role-Based Access**: Different interfaces and permissions for admins and project managers
 
@@ -22,7 +24,7 @@ Abiezer Construction CMS is a powerful materials management solution designed sp
 ### Prerequisites
 
 - Flutter SDK (v3.7.2 or higher)
-- Dart SDK (v3.0.0 or higher)
+- Dart SDK (v3.7.2 or higher)
 - Android Studio / VS Code with Flutter extensions
 - An emulator or physical device for testing
 
@@ -49,186 +51,131 @@ Abiezer Construction CMS is a powerful materials management solution designed sp
 ```
 lib/
 ├── core/                 # Core functionality
-│   ├── models/           # Data models (project, material, user, etc.)
-│   ├── theme/            # App theming (colors, text styles)
-│   └── utilities/        # Helper functions and constants
-├── features/             # Feature-based modules
-│   ├── auth/             # Authentication screens
-│   ├── dashboard/        # Main dashboard
-│   ├── bom/              # Bill of Materials management
-│   ├── projects/         # Project management
-│   └── reports/          # Reports and analytics
-├── widgets/              # Reusable UI components
-│   ├── common/           # Shared widgets
+│   ├── models/          # Data models (project, material, user, etc.)
+│   ├── theme/           # App theming (colors, text styles)
+│   └── utilities/       # Helper functions and constants
+├── features/            # Feature-based modules
+│   ├── auth/            # Authentication screens
+│   ├── dashboard/       # Main dashboard
+│   ├── bom/             # Bill of Materials management
+│   │   ├── pages/       # BoM sub-pages (requests, inventory, etc.)
+│   │   └── widgets/     # BoM-specific widgets
+│   ├── projects/        # Project management
+│   ├── purchases/       # Purchase tracking
+│   └── reports/         # Reports and analytics
+├── widgets/             # Reusable UI components
+│   ├── common/          # Shared widgets
 │   └── ...
-└── main.dart             # App entry point
+└── main.dart            # App entry point
 ```
 
-## Administrative Workflow
+## Features in Detail
 
-### Admin Dashboard
+### Bill of Materials (BoM) Management
 
-The admin dashboard provides a comprehensive view of:
-- All active projects with status indicators
-- Pending material requests, transfers, and returns
-- Low-stock alerts across all projects
-- Quick access to BoM management and user management
+The BoM system is organized into four main sections:
+
+1. **Requests**
+   - Review and manage material requests from projects
+   - Approve or deny requests with comments
+   - Track request history and status
+
+2. **Shopping List**
+   - View and manage materials needed for projects
+   - Track quantities and costs
+   - Generate purchase orders
+
+3. **Material Inventory**
+   - Browse and manage all project materials
+   - Track stock levels and locations
+   - Update material information
+
+4. **Low Stock & Out of Stock**
+   - Monitor inventory levels
+   - Set up alerts for low stock items
+   - Manage reorder points
 
 ### Project Management
 
-Administrators can:
-- Create and manage all construction projects
-- Assign project managers to specific projects
-- Update project status (active, completed, pending, canceled)
-- Edit project details (location, client information, dates)
-- View detailed project statistics and material usage
+- Create and manage construction projects
+- Assign project managers and team members
+- Track project status and progress
+- Manage project-specific materials and resources
 
-### Bill of Materials Management
+### Material Management
 
-Admins have complete control over the BoM system:
-- View and edit the full BoM for any project
-- Adjust material allocations manually
-- Correct usage logs and quantity entries
-- Set low-stock thresholds for each material
-- Manage the master material catalog (add, edit, categorize)
+- Track material usage across projects
+- Manage material transfers between projects
+- Process material returns
+- Monitor material costs and budgets
 
-### Material Request Processing
+## User Roles and Permissions
 
-The admin reviews and handles all material requests:
-- Review material details, quantity, reason, and attachments
-- Approve, deny, or adjust requested quantities
-- Add comments explaining decisions
-- System automatically updates BoMs upon approval
+### Admin
+- Full access to all features and projects
+- Manage user roles and permissions
+- Oversee all material requests and transfers
+- Access comprehensive reports and analytics
 
-### Material Transfer and Returns
+### Project Manager
+- Access to assigned projects
+- Create and manage project BoMs
+- Request materials and transfers
+- Generate project-specific reports
 
-Admins oversee material transfers between projects:
-- Review source/destination projects, material quantity, and reason
-- Approve or deny transfer requests
-- Manage the return of unused or damaged materials
-- Coordinate disposal or restocking of returned materials
+## Technical Implementation
 
-## Project Manager Workflow
+### State Management
+- Uses Flutter's built-in state management
+- Implements responsive design patterns
+- Follows Material Design guidelines
 
-Project managers have a focused view of their assigned projects:
-- View and manage their assigned projects
-- Mark materials as used in the construction process
-- Request additional materials when needed
-- Transfer materials between their assigned projects
-- Generate reports for their specific projects
+### Dependencies
+- `intl`: ^0.20.2 - For internationalization and formatting
+- `uuid`: ^4.5.1 - For generating unique identifiers
+- `cupertino_icons`: ^1.0.8 - For iOS-style icons
+- `flutter_lints`: ^5.0.0 - For code quality
 
-## Data Models
-
-### Projects
-
-Projects are the central entity in the system. Each project contains:
-- Basic details (name, description, location)
-- Client information
-- Start and end dates
-- Status (active, completed, pending, canceled)
-- Assigned users and project manager
-
-### Bill of Materials (BoM)
-
-Each project has a Bill of Materials which includes:
-- List of materials needed for the project
-- Quantity required for each material
-- Usage tracking
-- Total cost calculation
-
-### Materials
-
-Materials represent construction supplies with:
-- Name and description
-- Category (from predefined list)
-- Unit of measure
-- Unit price
-- Stock status
-- Source (new, leftover)
-
-### Users
-
-The system supports different user roles:
-- **Admin**: Full access to all features and projects
-- **Project Manager**: Access to assigned projects with specific permissions
-
-## Responsive Design
-
-The app is built with a fully responsive design approach:
-- **Mobile**: Compact interface with drawer navigation
-- **Tablet**: Split view with side navigation and content
-- **Desktop**: Expanded view with full sidebar and detailed content
-
-All UI components adapt to different screen sizes using:
-- `MediaQuery` for screen-aware layouts
-- `LayoutBuilder` for constraint-based widgets
-- Flexible and Expanded widgets for proportional sizing
-
-## Color Scheme
-
-The app follows a consistent color scheme:
-- **Primary Color**: Dark Blue (`#2E3853`)
-- **Secondary Color**: Light Blue (`#2577CC`)
-- **Accent Color**: Green (`#B9CC25`)
-- **Error Color**: Red (`#CF2419`)
-- **Background**: Light Gray (`#F5F5F7`)
-- **Card Background**: White (`#FEFFFE`)
-
-## Technologies Used
-
-- **Flutter**: Cross-platform UI framework (^3.7.2)
-- **Dart**: Programming language (^3.7.2)
-- **intl**: Internationalization and formatting (^0.20.2)
-- **uuid**: Generating unique identifiers (^4.5.1)
-- **cupertino_icons**: iOS style icons (^1.0.8)
-- **flutter_lints**: Code quality (^5.0.0)
+### Responsive Design
+- Mobile-first approach
+- Adaptive layouts for different screen sizes
+- Consistent UI across platforms
 
 ## Development Guidelines
 
-### Responsive Design Implementation
+### Code Style
+- Follow Flutter's official style guide
+- Use meaningful variable and function names
+- Document complex logic and functions
+- Keep widgets small and focused
 
-When adding new screens:
-1. Use `MediaQuery` or `LayoutBuilder` to detect screen size
-2. Implement different layouts for mobile, tablet, and desktop
-3. Avoid fixed dimensions - use relative sizing with Flexible/Expanded
-4. Test on multiple screen sizes before committing changes
+### Testing
+- Write unit tests for business logic
+- Implement widget tests for UI components
+- Test on multiple screen sizes
+- Verify all user flows
 
-### Code Organization
-
-When adding new features:
-1. Place feature-specific code in the appropriate `/features` subdirectory
-2. Extract reusable widgets to the `/widgets` directory
-3. Keep feature-specific models with the feature
-4. Move broadly used models to `/core/models`
-
-## Future Enhancements
-
-Planned future enhancements include:
-- Material forecasting and optimization
-- Advanced reporting and analytics
-- Supplier management and ordering system
-- Mobile barcode/QR code scanning for inventory
-- Offline mode for site usage
-- Multi-language support
-- Cloud synchronization
+### Performance
+- Optimize widget rebuilds
+- Use const constructors where possible
+- Implement lazy loading for large lists
+- Cache frequently accessed data
 
 ## Contributing
 
-We welcome contributions to improve Abiezer Construction CMS:
-
 1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
 
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
 
-## Contact
+## Support
 
-For support or inquiries, please contact [support@barefootbyte.dev](mailto:support@barefootbyte.dev).
+For support, email support@abiezer.com or create an issue in the repository.
 
 ---
 
