@@ -31,6 +31,27 @@
 
   <title>abiezer_cms</title>
   <link rel="manifest" href="manifest.json">
+  
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-analytics.js"></script>
+
+  <script>
+    // Your web app's Firebase configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyBXrWT6WblTGULJnZKQX5i4uRiJHYgJO7k",
+      authDomain: "abiezer-app.firebaseapp.com",
+      projectId: "abiezer-app",
+      storageBucket: "abiezer-app.firebasestorage.app", 
+      messagingSenderId: "491318480274",
+      appId: "1:491318480274:web:5b91b4040a95abc0c6054b",
+      measurementId: "G-6GXCE9J7JF"
+    };
+
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    firebase.analytics();
+  </script>
 </head>
 <body>
   <script src="flutter_bootstrap.js" async></script>

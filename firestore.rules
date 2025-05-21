@@ -1,0 +1,98 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Function to check if user is authenticated
+    function isAuth() {
+      return request.auth != null;
+    }
+    
+    // Function to check if user is an admin
+    function isAdmin() {
+      return isAuth() && 
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+    
+    // Function to check if user is a project manager
+    function isProjectManager() {
+      return isAuth() && 
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'project_manager';
+    }
+    
+    // Function to check if user is assigned to a project
+    function isAssignedToProject(projectId) {
+      return isAuth() && 
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        projectId in get(/databases/$(database)/documents/users/$(request.auth.uid)).data.assignedProjects;
+    }
+    
+    // Users collection
+    match /users/{userId} {
+      // Users can read their own data
+      // Admins can read and write all user data
+      allow read: if isAuth() && (request.auth.uid == userId || isAdmin());
+      allow write: if isAdmin() || (isAuth() && request.auth.uid == userId && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'assignedProjects']));
+    }
+    
+    // Projects collection
+    match /projects/{projectId} {
+      // Admins can read and write all projects
+      // Project managers can read projects they are assigned to
+      allow read: if isAuth() && (isAdmin() || isAssignedToProject(projectId));
+      allow write: if isAdmin();
+      
+      // Project BoM subcollection
+      match /bom/{bomId} {
+        allow read: if isAuth() && (isAdmin() || isAssignedToProject(projectId));
+        allow write: if isAdmin();
+        allow update: if isProjectManager() && isAssignedToProject(projectId) && 
+                       request.resource.data.diff(resource.data).affectedKeys().hasOnly(['actualUsed', 'lastUpdated', 'updatedBy']);
+      }
+      
+      // Material requests subcollection
+      match /material_requests/{requestId} {
+        allow read: if isAuth() && (isAdmin() || isAssignedToProject(projectId));
+        allow create: if isAuth() && isAssignedToProject(projectId);
+        allow update: if isAdmin() || 
+                      (isAuth() && resource.data.requestedBy == request.auth.uid && resource.data.status == 'pending');
+      }
+      
+      // Material transfers subcollection
+      match /material_transfers/{transferId} {
+        allow read: if isAuth() && (isAdmin() || isAssignedToProject(projectId));
+        allow create: if isAuth() && isAssignedToProject(projectId);
+        allow update: if isAdmin() || 
+                      (isAuth() && resource.data.requestedBy == request.auth.uid && resource.data.status == 'pending');
+      }
+      
+      // Material returns subcollection
+      match /material_returns/{returnId} {
+        allow read: if isAuth() && (isAdmin() || isAssignedToProject(projectId));
+        allow create: if isAuth() && isAssignedToProject(projectId);
+        allow update: if isAdmin() || 
+                      (isAuth() && resource.data.requestedBy == request.auth.uid && resource.data.status == 'pending');
+      }
+    }
+    
+    // Materials catalog
+    match /materials/{materialId} {
+      allow read: if isAuth();
+      allow write: if isAdmin();
+    }
+    
+    // Purchases collection
+    match /purchases/{purchaseId} {
+      allow read: if isAuth() && (isAdmin() || request.auth.uid == resource.data.requestedBy);
+      allow create: if isAuth();
+      allow update: if isAdmin() || 
+                    (isAuth() && resource.data.requestedBy == request.auth.uid && resource.data.status == 'pending');
+    }
+    
+    // Notifications collection
+    match /notifications/{notificationId} {
+      allow read: if isAuth() && (request.auth.uid == resource.data.userId || resource.data.userId == 'all');
+      allow write: if isAdmin();
+    }
+  }
+} 
