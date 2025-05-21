@@ -3,8 +3,10 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
 import 'config/firebase_options.dart';
 import 'providers/user_provider.dart';
+import 'providers/project_provider.dart';
+import 'providers/notification_provider.dart';
 import 'screens/auth/login_screen.dart';
-import 'screens/dashboard/dashboard_screen.dart';
+import 'screens/main/main_screen.dart';
 import 'utils/app_theme.dart';
 
 void main() async {
@@ -22,16 +24,20 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
-      providers: [ChangeNotifierProvider(create: (context) => UserProvider())],
+      providers: [
+        ChangeNotifierProvider(create: (context) => UserProvider()),
+        ChangeNotifierProvider(create: (context) => ProjectProvider()),
+        ChangeNotifierProvider(create: (context) => NotificationProvider()),
+      ],
       child: Consumer<UserProvider>(
         builder: (context, userProvider, _) {
           return MaterialApp(
             title: 'Abiezer Construction',
             theme: AppTheme.getThemeData(),
-            initialRoute: '/login',
+            home: const AuthWrapper(),
             routes: {
               '/login': (context) => const LoginScreen(),
-              '/dashboard': (context) => const DashboardScreen(),
+              '/main': (context) => const MainScreen(),
             },
             debugShowCheckedModeBanner: false,
           );
@@ -65,7 +71,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
     }
 
     if (userProvider.isAuthenticated) {
-      return const DashboardScreen();
+      return const MainScreen();
     } else {
       return const LoginScreen();
     }

@@ -37,8 +37,8 @@ class _LoginScreenState extends State<LoginScreen> {
       );
 
       if (success && mounted) {
-        // Navigate to dashboard
-        Navigator.pushReplacementNamed(context, '/dashboard');
+        // Navigate to main screen
+        Navigator.pushReplacementNamed(context, '/main');
       } else if (mounted) {
         // Show error message
         ScaffoldMessenger.of(context).showSnackBar(
