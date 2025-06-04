@@ -1,58 +1,61 @@
 class UserModel {
-  final String uid;
-  final String email;
-  final String role; // "admin" or "project_manager"
+  final String id;
   final String name;
-  final List<String> assignedProjects;
+  final String email;
+  final String role;
   final String photoUrl;
+  final List<String> assignedProjects;
+  final String? phone; // Optional for new users
 
   UserModel({
-    required this.uid,
+    required this.id,
+    required this.name,
     required this.email,
     required this.role,
-    required this.name,
+    required this.photoUrl,
     required this.assignedProjects,
-    this.photoUrl = '',
+    this.phone,
   });
 
-  // Convert Firestore document to UserModel
-  factory UserModel.fromMap(Map<String, dynamic> data, String uid) {
-    return UserModel(
-      uid: uid,
-      email: data['email'] ?? '',
-      role: data['role'] ?? 'project_manager',
-      name: data['name'] ?? '',
-      assignedProjects: List<String>.from(data['assignedProjects'] ?? []),
-      photoUrl: data['photoUrl'] ?? '',
-    );
-  }
-
-  // Convert UserModel to Map for Firestore
   Map<String, dynamic> toMap() {
     return {
+      'name': name,
       'email': email,
       'role': role,
-      'name': name,
-      'assignedProjects': assignedProjects,
       'photoUrl': photoUrl,
+      'assignedProjects': assignedProjects,
+      if (phone != null) 'phone': phone,
     };
   }
 
-  // Create a copy of the UserModel with some fields updated
+  static UserModel fromMap(Map<String, dynamic> map, String userId) {
+    return UserModel(
+      id: userId,
+      name: map['name'] ?? '',
+      email: map['email'] ?? '',
+      role: map['role'] ?? '',
+      photoUrl: map['photoUrl'] ?? '',
+      assignedProjects: List<String>.from(map['assignedProjects'] ?? []),
+      phone: map['phone'],
+    );
+  }
+
   UserModel copyWith({
+    String? name,
     String? email,
     String? role,
-    String? name,
-    List<String>? assignedProjects,
     String? photoUrl,
+    List<String>? assignedProjects,
+    String? phone,
   }) {
     return UserModel(
-      uid: this.uid,
+      id: this.id,
+      name: name ?? this.name,
       email: email ?? this.email,
       role: role ?? this.role,
-      name: name ?? this.name,
-      assignedProjects: assignedProjects ?? this.assignedProjects,
       photoUrl: photoUrl ?? this.photoUrl,
+      assignedProjects: assignedProjects ?? this.assignedProjects,
+      phone: phone ?? this.phone,
     );
   }
 }

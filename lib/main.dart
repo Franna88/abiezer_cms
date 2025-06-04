@@ -4,9 +4,11 @@ import 'package:provider/provider.dart';
 import 'config/firebase_options.dart';
 import 'providers/user_provider.dart';
 import 'providers/project_provider.dart';
+import 'providers/projects_provider.dart';
 import 'providers/notification_provider.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/main/main_screen.dart';
+import 'screens/admin/project_details_screen.dart';
 import 'utils/app_theme.dart';
 
 void main() async {
@@ -27,6 +29,7 @@ class MyApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (context) => UserProvider()),
         ChangeNotifierProvider(create: (context) => ProjectProvider()),
+        ChangeNotifierProvider(create: (context) => ProjectsProvider()),
         ChangeNotifierProvider(create: (context) => NotificationProvider()),
       ],
       child: Consumer<UserProvider>(
@@ -38,6 +41,8 @@ class MyApp extends StatelessWidget {
             routes: {
               '/login': (context) => const LoginScreen(),
               '/main': (context) => const MainScreen(),
+              '/admin/project-details': (context) =>
+                  const ProjectDetailsScreen(),
             },
             debugShowCheckedModeBanner: false,
           );

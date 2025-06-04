@@ -13,9 +13,10 @@ The Users tab allows Admins to manage user roles, project assignments, and permi
 1. Navigate to Users tab.
 2. View user table; search/filter.
 3. Add/edit user via form (name, email, role, projects, permissions).
-4. Deactivate user with confirmation.
-5. View audit trail in modal.
-6. Navigate to other tabs.
+4. Users are displayed via a user card container.
+5. Deactivate user with confirmation.
+6. View audit trail in modal.
+7. Navigate to other tabs.
 
 ## 4. UI Components
 - Table: `DataTable` for users.

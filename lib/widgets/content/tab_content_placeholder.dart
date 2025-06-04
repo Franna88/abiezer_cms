@@ -1,17 +1,67 @@
 import 'package:flutter/material.dart';
 import '../../utils/app_theme.dart';
 import '../../utils/responsive.dart';
+import '../../screens/admin/admin_dashboard_screen.dart';
+import '../../screens/admin/users_screen.dart';
+import '../../screens/admin/projects_screen.dart';
+import '../../screens/pm_dashboard/pm_dashboard_screen.dart';
+import '../../features/bom/screens/admin_bom_screen.dart';
+import '../../features/bom/screens/pm_bom_screen.dart';
 import '../navigation/side_nav.dart';
+import '../../providers/user_provider.dart';
+import 'package:provider/provider.dart';
 
 class TabContentPlaceholder extends StatelessWidget {
   final NavTab tab;
   final String? projectName;
+  final Function(NavTab)? onTabSelected;
 
-  const TabContentPlaceholder({Key? key, required this.tab, this.projectName})
-    : super(key: key);
+  const TabContentPlaceholder({
+    Key? key,
+    required this.tab,
+    this.projectName,
+    this.onTabSelected,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
+    final isMobile = Responsive.isMobile(context);
+    final userProvider = Provider.of<UserProvider>(context);
+    final isAdmin = userProvider.isAdmin;
+
+    // Return appropriate screen based on tab and user role
+    if (tab == NavTab.dashboard) {
+      if (isAdmin) {
+        return AdminDashboardScreen(onTabSelected: onTabSelected);
+      } else {
+        return const PMDashboardScreen();
+      }
+    }
+
+    // Return Projects screen for admin
+    if (tab == NavTab.projects && isAdmin) {
+      return const ProjectsScreen();
+    }
+
+    // Return BoM screen based on user role
+    if (tab == NavTab.bom) {
+      if (isAdmin) {
+        return const AdminBoMScreen();
+      } else {
+        return const PMBoMScreen();
+      }
+    }
+
+    // Return Users screen for admin
+    if (tab == NavTab.users && isAdmin) {
+      return const UsersScreen();
+    }
+
+    // For all other tabs, show placeholder content
+    return _buildComingSoonContent(context);
+  }
+
+  Widget _buildComingSoonContent(BuildContext context) {
     final isMobile = Responsive.isMobile(context);
 
     return Container(
@@ -79,7 +129,7 @@ class TabContentPlaceholder extends StatelessWidget {
                   ),
                   const SizedBox(height: 32),
                   Text(
-                    '${_getTabDescription()}',
+                    _getTabDescription(),
                     textAlign: TextAlign.center,
                     style: const TextStyle(
                       fontSize: 14,

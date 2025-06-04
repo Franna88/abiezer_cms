@@ -13,7 +13,7 @@ class TopBar extends StatelessWidget implements PreferredSizeWidget {
   final bool isAdmin;
 
   const TopBar({Key? key, this.onMenuTap, required this.isAdmin})
-    : super(key: key);
+      : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -31,13 +31,12 @@ class TopBar extends StatelessWidget implements PreferredSizeWidget {
       backgroundColor: Colors.white,
       automaticallyImplyLeading: false,
       leadingWidth: isMobile ? 56 : 0,
-      leading:
-          isMobile
-              ? IconButton(
-                icon: const Icon(Icons.menu, color: AppTheme.textPrimaryColor),
-                onPressed: onMenuTap,
-              )
-              : null,
+      leading: isMobile
+          ? IconButton(
+              icon: const Icon(Icons.menu, color: AppTheme.textPrimaryColor),
+              onPressed: onMenuTap,
+            )
+          : null,
       title: Row(
         children: [
           if (!isMobile) const SizedBox(width: 16),
@@ -238,42 +237,42 @@ class TopBar extends StatelessWidget implements PreferredSizeWidget {
                 const Divider(),
                 notificationProvider.notifications.isEmpty
                     ? const Padding(
-                      padding: EdgeInsets.all(16.0),
-                      child: Center(child: Text('No notifications')),
-                    )
+                        padding: EdgeInsets.all(16.0),
+                        child: Center(child: Text('No notifications')),
+                      )
                     : Expanded(
-                      child: ListView.builder(
-                        itemCount: notificationProvider.notifications.length,
-                        itemBuilder: (context, index) {
-                          final notification =
-                              notificationProvider.notifications[index];
-                          return ListTile(
-                            title: Text(
-                              notification.title,
-                              style: TextStyle(
-                                fontWeight:
-                                    notification.isRead
-                                        ? FontWeight.normal
-                                        : FontWeight.bold,
+                        child: ListView.builder(
+                          itemCount: notificationProvider.notifications.length,
+                          itemBuilder: (context, index) {
+                            final notification =
+                                notificationProvider.notifications[index];
+                            return ListTile(
+                              title: Text(
+                                notification.title,
+                                style: TextStyle(
+                                  fontWeight: notification.isRead
+                                      ? FontWeight.normal
+                                      : FontWeight.bold,
+                                ),
                               ),
-                            ),
-                            subtitle: Text(
-                              notification.message,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            leading: _getNotificationIcon(notification.type),
-                            onTap: () {
-                              // Mark as read when tapped
-                              notificationProvider.markAsRead(notification.id);
-                              // Close dialog
-                              Navigator.of(context).pop();
-                              // TODO: Navigate to related screen if actionUrl exists
-                            },
-                          );
-                        },
+                              subtitle: Text(
+                                notification.message,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              leading: _getNotificationIcon(notification.type),
+                              onTap: () {
+                                // Mark as read when tapped
+                                notificationProvider
+                                    .markAsRead(notification.id);
+                                // Close dialog
+                                Navigator.of(context).pop();
+                                // TODO: Navigate to related screen if actionUrl exists
+                              },
+                            );
+                          },
+                        ),
                       ),
-                    ),
                 if (notificationProvider.notifications.isNotEmpty)
                   Padding(
                     padding: const EdgeInsets.only(top: 8.0),
@@ -283,13 +282,13 @@ class TopBar extends StatelessWidget implements PreferredSizeWidget {
                           if (Provider.of<UserProvider>(
                                 context,
                                 listen: false,
-                              ).user?.uid !=
+                              ).user?.id !=
                               null) {
                             notificationProvider.markAllAsRead(
                               Provider.of<UserProvider>(
                                 context,
                                 listen: false,
-                              ).user!.uid,
+                              ).user!.id,
                             );
                           }
                         },

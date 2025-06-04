@@ -30,7 +30,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '491318480274',
     projectId: 'abiezer-app',
     authDomain: 'abiezer-app.firebaseapp.com',
-    storageBucket: 'abiezer-app.firebasestorage.app',
+    storageBucket: 'abiezer-app.appspot.com',
     measurementId: 'G-6GXCE9J7JF',
   );
 
@@ -39,7 +39,7 @@ class DefaultFirebaseOptions {
     appId: '1:491318480274:android:YOUR_ANDROID_APP_ID',
     messagingSenderId: '491318480274',
     projectId: 'abiezer-app',
-    storageBucket: 'abiezer-app.firebasestorage.app',
+    storageBucket: 'abiezer-app.appspot.com',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
@@ -47,7 +47,7 @@ class DefaultFirebaseOptions {
     appId: '1:491318480274:ios:YOUR_IOS_APP_ID',
     messagingSenderId: '491318480274',
     projectId: 'abiezer-app',
-    storageBucket: 'abiezer-app.firebasestorage.app',
+    storageBucket: 'abiezer-app.appspot.com',
     iosClientId: 'YOUR_IOS_CLIENT_ID',
     iosBundleId: 'com.barefootbyte.abiezerCms',
   );
@@ -57,7 +57,7 @@ class DefaultFirebaseOptions {
     appId: '1:491318480274:macos:YOUR_MACOS_APP_ID',
     messagingSenderId: '491318480274',
     projectId: 'abiezer-app',
-    storageBucket: 'abiezer-app.firebasestorage.app',
+    storageBucket: 'abiezer-app.appspot.com',
     iosClientId: 'YOUR_MACOS_CLIENT_ID',
     iosBundleId: 'com.barefootbyte.abiezerCms',
   );

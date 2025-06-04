@@ -13,7 +13,7 @@ The BoM tab enables Project Managers to view project BoMs, log usage, request ma
 - Low-stock alerts, offline support.
 
 ## 3. Workflow
-1. Navigate to BoM tab; select project.
+1. Navigate to BoM tab; view list of all projects live and view list of projects assigned to them. Project managers can only access and manage projects they are assigned to.
 2. Scroll cards/table; search/filter.
 3. Log usage: Tap material, enter quantity, note, photo; submit.
 4. Request material: Tap “Request More”; fill form; submit.

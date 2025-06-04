@@ -1,0 +1,22 @@
+[
+  {
+    "role": "admin",
+    "photoUrl": "",
+    "assignedProjects": [
+      ""
+    ],
+    "email": "admin@abiezer.com",
+    "name": "Admin User",
+    "id": "KCQFk9qb4rg0Be92jBIPTM7dhS63"
+  },
+  {
+    "role": "project_manager",
+    "photoUrl": "",
+    "assignedProjects": [
+      ""
+    ],
+    "email": "projmanager@abiezer.com",
+    "name": "Project Manager",
+    "id": "qLidE2lNIkaYspNPM4IRJzyab0E3"
+  }
+]

@@ -1,0 +1,299 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+Generic Coding Rules for Flutter/Dart Projects
+These coding standards ensure consistency, scalability, performance, and maintainability for Flutter/Dart projects across web, mobile, or desktop applications.
+
+1. Dart Code Style
+Objective: Ensure consistent, readable, and maintainable code.
+
+Rules:
+
+Run dart format . for uniform formatting.
+Use flutter_lints in analysis_options.yaml with rules:
+always_declare_return_types
+prefer_const_constructors
+avoid_dynamic_calls (except for justified interop)
+prefer_final_fields for immutability
+avoid_empty_else for clarity
+use_function_type_syntax_for_parameters
+unnecessary_null_comparison for null safety
+
+
+Follow naming conventions:
+PascalCase for classes (e.g., DataProcessor)
+camelCase for variables/functions (e.g., processData)
+kCamelCase for constants (e.g., kDefaultTimeout)
+
+
+Ensure null safety compliance in all code.
+
+
+Example:
+const kDefaultTimeout = 30;
+final String processData(String input) => input.toUpperCase();
+
+class DataProcessor {
+  final String id;
+  const DataProcessor({required this.id});
+}
+
+
+Commands:
+dart format .
+flutter analyze
+dart fix --apply
+
+
+
+
+2. File Structure
+Objective: Promote modularity and ease of navigation.
+
+Rules:
+
+Organize code by feature or layer (e.g., lib/screens/, lib/services/).
+Limit files to a single responsibility (e.g., one class or function).
+Use a layered architecture: UI (screens/, widgets/), logic (services/), and data (models/).
+
+
+Example Structure:
+lib/
+├── config/
+│   └── app_config.dart
+├── models/
+│   └── data_model.dart
+├── screens/
+│   └── main_screen.dart
+├── services/
+│   └── network_service.dart
+├── utils/
+│   └── helpers.dart
+├── widgets/
+│   └── reusable_widget.dart
+└── theme/
+    └── app_theme.dart
+
+
+
+
+3. State Management
+Objective: Handle state efficiently and scalably.
+
+Rules:
+
+Use provider for most projects due to simplicity and performance.
+Evaluate alternatives (riverpod, bloc, Redux) for complex apps (e.g., large state trees, async dependencies).
+Avoid setState in large or complex widgets to prevent performance issues.
+Use dependency injection (provider, get_it) for testable services.
+
+
+Example:
+class DataProvider with ChangeNotifier {
+  String _data = '';
+  String get data => _data;
+  void updateData(String newData) {
+    _data = newData;
+    notifyListeners();
+  }
+}
+
+
+Dependencies:
+dependencies:
+  provider: ^6.0.0
+  get_it: ^7.6.0
+
+
+
+
+4. Widget Development
+Objective: Build modular, efficient, and responsive widgets.
+
+Rules:
+
+Decompose large widgets into smaller, reusable components.
+Use const constructors to optimize rendering and tree shaking.
+Assign Keys (e.g., ValueKey) for testing and state preservation.
+Ensure responsiveness with LayoutBuilder, MediaQuery, Expanded, or Flexible.
+Avoid unconstrained widgets (e.g., ListView without SizedBox parent).
+Enhance accessibility with Semantics.
+Debug layout issues using debugPaintSizeEnabled or Flutter DevTools.
+
+
+Example:
+class ReusableWidget extends StatelessWidget {
+  const ReusableWidget({super.key});
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) => ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: constraints.maxWidth * 0.9),
+        child: ListView.builder(
+          itemCount: items.length,
+          itemBuilder: (context, index) => ListTile(title: Text('Item $index')),
+        ),
+      ),
+    );
+  }
+}
+
+
+
+
+5. API and Service Integration
+Objective: Integrate external services reliably and securely.
+
+Rules:
+
+Handle sensitive operations server-side where applicable.
+Implement robust error handling and response validation.
+Use dependency injection for services to enhance testability.
+
+
+Example:
+class NetworkService {
+  Future<String> fetchData() async {
+    try {
+      final response = await http.get(Uri.parse('https://api.example.com/data'));
+      if (response.statusCode == 200) {
+        return response.body;
+      } else {
+      throw Exception('Request failed');
+    }
+    } catch (e) {
+      throw Exception('Network error: $e');
+    }
+    }
+  }
+}
+
+
+
+
+6. Performance Optimization
+Objective: Ensure fast and efficient app performance.
+
+Rules:
+
+Minimize bundle size with tree shaking` and deferred loading.
+Use ListView.builder for large lists to reduce rendering overhead.
+Optimize images with compression or packages like cached_network_image.
+Minimize overdraw with clipBehavior on widgets.
+Profile performance using Flutter DevTools to identify bottlenecks.
+For web apps, choose between html renderer (lightweight) or canvaskit (rich graphics) based on needs.
+Performance goals:
+Bundle size: < 2MB for initial load
+First Contentful Paint: < 2 seconds
+
+
+
+
+Build Commands:
+flutter build web --release --tree-shake-icons --web-renderer html
+flutter build web --analyze-size
+
+
+Dependencies:
+dependencies:
+  cached_network_image: ^3.2.0
+
+
+
+
+7. Testing
+Objective: Guarantee reliability through comprehensive testing.
+
+Rules:
+
+Write unit tests for logic, widget tests for UI, and integration tests for key flows.
+Use mockito for mocking dependencies.
+Target >80% code coverage.
+Test critical error scenarios (e.g., network failures, invalid input).
+
+
+Example Widget Test:
+testWidgets('Widget renders correctly', (WidgetTester tester) async {
+  await tester.pumpWidget(const MyApp());
+  expect(find.byKey(const Key('content_widget')), findsOneWidget);
+});
+
+
+Dependencies:
+dev_dependencies:
+  mockito: ^5.4.2
+  flutter_test:
+    sdk: flutter
+
+
+
+
+8. Security
+Objective: Protect sensitive data and ensure robust validation.
+
+Rules:
+
+Store sensitive credentials in environment variables or secure storage.
+Validate inputs on client and server sides.
+Use HTTPS for all network communications.
+Regularly review access controls for production environments.
+
+
+Example Validation:
+String? validateInput(String? value) {
+  if (value == null || value.isEmpty) {
+    return 'This field is required';
+  }
+  return null;
+}
+
+
+
+
+9. Documentation
+Objective: Keep code and project well-documented.
+
+Rules:
+
+Add inline comments for complex logic.
+Generate API docs with flutter doc.
+Maintain an up-to-date README.md with setup and usage instructions.
+
+
+Example:
+/// Processes input data and returns a result.
+String processInput(String input) {
+  // Implementation
+  return input.toUpperCase();
+}
+
+
+Commands:
+dart doc
+
+
+
+
+10. Deployment & Quality Assurance
+Objective: Ensure smooth and reliable deployments.
+
+Pre-deployment Checklist:
+flutter analyze                    # No errors
+dart format --set-exit-if-changed  # No changes needed
+flutter test                      # All tests pass
+ flutter build web --release        # Builds successfully
+
+
+Monitoring:
+npm install -g @lhci-cli
+lhci autorun --upload.target=temporary-public-storage
+
+
+
+
+Conclusion
+These generic rules provide a flexible, high-quality foundation for any Flutter/Dart project. They are designed to ensure consistency, performance, and reliability while allowing adaptation to specific project needs.
+Last Updated: May 2025
+

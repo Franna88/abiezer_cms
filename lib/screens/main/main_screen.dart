@@ -43,7 +43,7 @@ class _MainScreenState extends State<MainScreen> {
       await projectProvider.fetchUserProjects(userProvider.user!);
 
       // Fetch notifications
-      await notificationProvider.fetchNotifications(userProvider.user!.uid);
+      await notificationProvider.fetchNotifications(userProvider.user!.id);
     }
   }
 
@@ -76,15 +76,14 @@ class _MainScreenState extends State<MainScreen> {
             isMobile ? () => _scaffoldKey.currentState?.openDrawer() : null,
         isAdmin: isAdmin,
       ),
-      drawer:
-          isMobile
-              ? Drawer(
-                child: SideNav(
-                  selectedTab: _selectedTab,
-                  onTabSelected: _onTabSelected,
-                ),
-              )
-              : null,
+      drawer: isMobile
+          ? Drawer(
+              child: SideNav(
+                selectedTab: _selectedTab,
+                onTabSelected: _onTabSelected,
+              ),
+            )
+          : null,
       body: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -105,6 +104,7 @@ class _MainScreenState extends State<MainScreen> {
                   child: TabContentPlaceholder(
                     tab: _selectedTab,
                     projectName: selectedProject?.name,
+                    onTabSelected: _onTabSelected,
                   ),
                 ),
 
