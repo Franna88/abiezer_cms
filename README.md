@@ -1,52 +1,225 @@
-# Abiezer CMS
+# Abiezer Construction CMS
 
-A modern, Flutter-based Content Management System with Firebase backend integration.
+A comprehensive Flutter-based Content Management System (CMS) for Abiezer Construction, designed to streamline construction project management, user authentication, and project-related notifications. This system provides a complete solution for managing construction projects from inception to completion.
 
 ## 🌟 Features
 
-- 🔐 Secure Authentication System
-- 📊 Dynamic Content Management
-- 🗃️ Firebase Integration
-- 📱 Responsive Design
-- 🌐 Cross-platform Support
-- 🔄 Real-time Updates
-- 📸 Image Upload & Management
-- 🎯 State Management with Provider
-- 📱 Offline Support
-- 🔍 Advanced Search Capabilities
-- 📊 Analytics Integration
-- 🎨 Customizable Themes
-- 📝 Rich Text Editor
+### Authentication & User Management
+- 🔐 Secure Authentication System with Firebase Auth
+- 👥 Role-based Access Control (Admin, Project Manager, User)
+- 👤 User Profile Management
+- 🔒 Secure Password Management
+- 📱 Multi-device Login Support
+
+### Project Management
+- 📋 Project Creation and Management
+- 📊 Project Dashboard with Key Metrics
+- 📝 Project Documentation
+- 📅 Project Timeline Management
+- 📍 Location-based Project Tracking
+- 💰 Budget Management
+- 📈 Progress Tracking
+- 🏷️ Project Status Updates
+
+### Bill of Materials (BOM)
+- 📋 BOM Creation and Management
+- 📊 Material Cost Tracking
+- 📦 Inventory Management
+- 🔄 Material Usage Tracking
+- 📝 Material Specifications
+- 💰 Cost Estimation
+
+### Purchasing Management
+- 🛒 Purchase Order Creation
+- 📋 Vendor Management
+- 💰 Cost Tracking
+- 📊 Purchase History
+- 📈 Budget vs. Actual Analysis
+- 📝 Purchase Documentation
+
+### Productivity Tracking
+- ⏱️ Time Tracking
+- 👥 Team Performance Metrics
+- 📊 Productivity Reports
+- 📈 Efficiency Analysis
+- 📝 Daily Progress Reports
+
+### Reporting System
+- 📊 Custom Report Generation
+- 📈 Data Visualization
+- 📑 Export Reports (PDF, Excel)
+- 📊 Financial Reports
+- 📈 Project Performance Reports
+- 📊 Resource Utilization Reports
+
+### Approval System
+- ✅ Multi-level Approval Workflow
+- 📝 Document Approval
+- 💰 Cost Approval
+- 📋 Change Request Approval
+- 📊 Approval History
+
+### Real-time Features
 - 🔔 Push Notifications
-- 📈 Performance Monitoring
+- 📱 Real-time Updates
+- 💬 In-app Messaging
+- 📊 Live Dashboard Updates
+- 🔄 Synchronization Across Devices
+
+### Document Management
+- 📄 Document Upload and Storage
+- 📁 File Organization
+- 🔍 Document Search
+- 📝 Version Control
+- 🔒 Secure Document Access
+
+## 📱 Application Screens
+
+### Authentication Screens
+- Login Screen
+- Registration Screen
+- Password Reset Screen
+- Email Verification Screen
+
+### Admin Screens (Implemented)
+- Admin Dashboard
+  - Overview of all projects
+  - Active projects count
+  - Low-stock materials monitoring
+  - Recent project activities
+  - Pending actions
+  - Real-time notifications
+  - Activity log
+- User Management
+  - User listing
+  - User role assignment
+  - User status management
+- Project Management
+  - Project creation and editing
+  - Project status updates
+  - Project assignment
+  - Project timeline management
+- BOM Management
+  - BOM creation
+  - Material tracking
+  - Cost management
+  - Inventory alerts
+- System Settings
+  - Application configuration
+  - User permissions
+  - System preferences
+
+### Project Manager Screens (Implemented)
+- Project Manager Dashboard
+  - Assigned projects overview
+  - Project metrics
+  - Low-stock materials alerts
+  - Pending requests
+  - Recent notifications
+  - Project status updates
+- Project Details
+  - Project information
+  - Team management
+  - Resource allocation
+  - Progress tracking
+  - Budget monitoring
+- BOM Managementz
+  - Material requirements
+  - Cost tracking
+  - Inventory management
+  - Purchase requests
+- Team Management
+  - Team member assignment
+  - Task distribution
+  - Performance tracking
+  - Resource allocation
+
+### Project Management Screens
+- Project Dashboard
+- Project Details
+- Project Timeline
+- Project Documents
+- Project Team
+- Project Budget
+- Project Reports
+
+### BOM Screens
+- BOM Creation
+- BOM List
+- BOM Details
+- Material Management
+- Cost Analysis
+
+### Purchase Management Screens
+- Purchase Orders
+- Vendor Management
+- Purchase History
+- Cost Tracking
+- Budget Analysis
+
+### Productivity Screens
+- Time Tracking
+- Team Performance
+- Daily Reports
+- Efficiency Analysis
+
+### Report Screens
+- Report Generation
+- Data Visualization
+- Export Options
+- Custom Reports
+
+### Settings Screens
+- User Profile
+- Application Settings
+- Notification Settings
+- System Preferences
+
+## 🛠️ Technical Features
+
+### State Management
+- Provider-based State Management
+- Real-time Data Synchronization
+- Offline Data Persistence
+- Efficient Data Caching
+
+### Firebase Integration
+- Firebase Authentication
+- Cloud Firestore Database
+- Firebase Storage
+- Firebase Analytics
+- Real-time Updates
+
+### UI/UX Features
+- Material Design Implementation
+- Responsive Layout
+- Custom Theme Support
+- Dark/Light Mode
+- Loading Animations
+- Error Handling
+- Form Validation
+
+### Security Features
+- Secure Authentication
+- Role-based Access Control
+- Data Encryption
+- Secure File Storage
+- Session Management
 
 ## 🚀 Getting Started
 
 ### Prerequisites
-
 - Flutter SDK (>=3.0.0)
 - Dart SDK (>=3.0.0)
-- Firebase Project Setup
-- Git
+- Firebase Account
 - Android Studio / Xcode (for mobile development)
 - VS Code (recommended IDE)
-
-### Development Environment Setup
-
-1. Install Flutter:
-   - Follow the [official Flutter installation guide](https://flutter.dev/docs/get-started/install)
-   - Verify installation with `flutter doctor`
-
-2. Set up your IDE:
-   - Install Flutter and Dart plugins
-   - Configure your preferred code formatter
-   - Set up debugging tools
 
 ### Installation
 
 1. Clone the repository:
 ```bash
-git clone [your-repository-url]
+git clone [repository-url]
 cd abiezer_cms
 ```
 
@@ -56,11 +229,11 @@ flutter pub get
 ```
 
 3. Configure Firebase:
-   - Create a new Firebase project in the [Firebase Console](https://console.firebase.google.com/)
-   - Enable Authentication, Firestore, Storage, and Analytics
-   - Add your `google-services.json` to `/android/app/`
-   - Add your `GoogleService-Info.plist` to `/ios/Runner/`
-   - Configure web Firebase SDK in `/web/index.html`
+   - Create a new Firebase project
+   - Add your Firebase configuration files:
+     - For Android: `android/app/google-services.json`
+     - For iOS: `ios/Runner/GoogleService-Info.plist`
+     - For Web: Configure Firebase in `web/index.html`
 
 4. Run the application:
 ```bash
@@ -71,106 +244,100 @@ flutter run
 
 ```
 lib/
-├── config/         # Configuration files and constants
-├── core/           # Core functionality and base classes
-├── features/       # Feature-specific modules
-├── models/         # Data models and entities
-├── providers/      # State management providers
-├── screens/        # UI screens and pages
-├── services/       # Backend and API services
-├── utils/          # Utility functions and helpers
-└── widgets/        # Reusable UI components
+├── config/         # Configuration files
+├── core/          # Core functionality
+├── features/      # Feature-based modules
+├── models/        # Data models
+├── providers/     # State management
+├── screens/       # UI screens
+│   ├── admin/    # Admin screens
+│   ├── auth/     # Authentication screens
+│   ├── bom/      # Bill of Materials screens
+│   ├── dashboard/# Dashboard screens
+│   ├── projects/ # Project management screens
+│   ├── reports/  # Reporting screens
+│   └── settings/ # Settings screens
+├── services/      # Business logic and API services
+├── utils/         # Utility functions
+└── widgets/       # Reusable widgets
 ```
 
-## 🛠️ Built With
+## 📦 Dependencies
 
-- [Flutter](https://flutter.dev/) - UI Framework
-- [Firebase](https://firebase.google.com/) - Backend Services
-  - Firebase Auth (^4.16.0)
-  - Cloud Firestore (^4.14.0)
-  - Firebase Storage (^11.6.0)
-  - Firebase Analytics (^10.8.6)
-- [Provider](https://pub.dev/packages/provider) (^6.1.1) - State Management
-- [Image Picker](https://pub.dev/packages/image_picker) (^1.1.2) - Media Selection
-- [Cached Network Image](https://pub.dev/packages/cached_network_image) (^3.3.1) - Image Caching
-- [Flutter SVG](https://pub.dev/packages/flutter_svg) (^2.0.9) - SVG Support
-- [Connectivity Plus](https://pub.dev/packages/connectivity_plus) (^6.1.4) - Network Connectivity
-- [Shared Preferences](https://pub.dev/packages/shared_preferences) (^2.5.3) - Local Storage
-- [Flutter Spinkit](https://pub.dev/packages/flutter_spinkit) (^5.2.0) - Loading Animations
-- [Intl](https://pub.dev/packages/intl) (^0.19.0) - Internationalization
-- [Path Provider](https://pub.dev/packages/path_provider) (^2.1.5) - File System Access
-- [UUID](https://pub.dev/packages/uuid) (^4.5.1) - Unique Identifiers
+### Firebase
+- firebase_core: ^2.24.2
+- firebase_auth: ^4.16.0
+- cloud_firestore: ^4.14.0
+- firebase_storage: ^11.6.0
+- firebase_analytics: ^10.8.6
 
-## 📱 Supported Platforms
+### State Management
+- provider: ^6.1.1
 
-- ✅ Android
-- ✅ iOS
-- ✅ Web
-- ✅ macOS
-- ✅ Windows
-- ✅ Linux
+### UI Components
+- flutter_spinkit: ^5.2.0
+- cached_network_image: ^3.3.1
+- flutter_svg: ^2.0.9
 
-## 🔧 Configuration
+### Utilities
+- image_picker: ^1.1.2
+- intl: ^0.19.0
+- connectivity_plus: ^6.1.4
+- shared_preferences: ^2.5.3
+- path_provider: ^2.1.5
+- uuid: ^4.5.1
 
-The application can be configured through various environment files and settings:
+## 💻 Development
 
-- Firebase configuration in respective platform folders
-- Environment variables for different build modes
-- Theme customization in the core/theme directory
-- Asset management in pubspec.yaml
+### Code Style
+This project follows the official Dart style guide. Run the following command to check your code style:
 
-## 🐛 Troubleshooting
+```bash
+flutter analyze
+```
 
-Common issues and their solutions:
+### Testing
+Run tests using:
 
-1. **Firebase Configuration Issues**
-   - Ensure all Firebase configuration files are properly placed
-   - Verify Firebase project settings match your configuration
-   - Check Firebase console for any service restrictions
+```bash
+flutter test
+```
 
-2. **Build Issues**
-   - Run `flutter clean` and `flutter pub get`
-   - Check for platform-specific setup requirements
-   - Verify all dependencies are compatible
+## 📱 Deployment
 
-3. **Performance Issues**
-   - Use Flutter DevTools for performance profiling
-   - Check for memory leaks in image loading
-   - Optimize Firebase queries
+### Android
+1. Update version in `pubspec.yaml`
+2. Run:
+```bash
+flutter build apk --release
+```
+
+### iOS
+1. Update version in `pubspec.yaml`
+2. Run:
+```bash
+flutter build ios --release
+```
+
+### Web
+1. Update version in `pubspec.yaml`
+2. Run:
+```bash
+flutter build web --release
+```
 
 ## 🤝 Contributing
 
-1. Fork the Project
-2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the Branch (`git push origin feature/AmazingFeature`)
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
-
-## 📝 Code Style
-
-This project follows the official Dart style guide and Flutter best practices:
-
-- Use `flutter format .` to format code
-- Follow the lint rules defined in `analysis_options.yaml`
-- Write meaningful commit messages
-- Document complex functionality
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the LICENSE file for details
+This project is proprietary and confidential. All rights reserved.
 
-## 📞 Contact
+## 📞 Support
 
-Your Name - [your-email@example.com]
-
-Project Link: [https://github.com/yourusername/abiezer_cms]
-
-## 🙏 Acknowledgments
-
-- Flutter Team for the amazing framework
-- Firebase for the robust backend services
-- All contributors who have helped this project grow
-
----
-
-⭐️ If you found this project helpful, please give it a star!
+For support, please contact [Your Contact Information]

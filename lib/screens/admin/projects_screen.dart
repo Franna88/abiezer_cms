@@ -448,16 +448,14 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
   }
 
   Future<List<String>> _getProjectManagerNames(List<String> managerIds) async {
-    // TODO: Optimize with caching if needed
     if (managerIds.isEmpty) return [];
-    final usersSnapshot = await FirebaseFirestore.instance
-        .collection('users')
-        .where(FieldPath.documentId, whereIn: managerIds)
-        .get();
-    return usersSnapshot.docs
-        .map((doc) => doc.data()['name'] as String? ?? '')
-        .where((name) => name.isNotEmpty)
-        .toList();
+
+    try {
+      return await _userService.getUserNamesByIds(managerIds);
+    } catch (e) {
+      print('Error getting project manager names: $e');
+      return ['Error loading manager names'];
+    }
   }
 
   Future<bool> _hasLowStock(String projectId) async {

@@ -9,15 +9,10 @@ class BoMService {
 
   // Material Catalog Operations
   Stream<List<MaterialModel>> getMaterials() {
-    return _firestore
-        .collection('materials')
-        .orderBy('name')
-        .snapshots()
-        .map(
-          (snapshot) =>
-              snapshot.docs
-                  .map((doc) => MaterialModel.fromFirestore(doc))
-                  .toList(),
+    return _firestore.collection('materials').orderBy('name').snapshots().map(
+          (snapshot) => snapshot.docs
+              .map((doc) => MaterialModel.fromFirestore(doc))
+              .toList(),
         );
   }
 
@@ -77,10 +72,9 @@ class BoMService {
         .collection('bom')
         .snapshots()
         .map(
-          (snapshot) =>
-              snapshot.docs
-                  .map((doc) => ProjectBoMModel.fromFirestore(doc))
-                  .toList(),
+          (snapshot) => snapshot.docs
+              .map((doc) => ProjectBoMModel.fromFirestore(doc))
+              .toList(),
         );
   }
 
@@ -101,6 +95,15 @@ class BoMService {
         .update(projectMaterial.toFirestore());
   }
 
+  Future<void> setProjectMaterial(ProjectBoMModel projectMaterial) {
+    return _firestore
+        .collection('projects')
+        .doc(projectMaterial.projectId)
+        .collection('bom')
+        .doc(projectMaterial.id)
+        .set(projectMaterial.toFirestore());
+  }
+
   Future<void> adjustQuantity(
     String projectId,
     String materialId,
@@ -112,9 +115,9 @@ class BoMService {
         .collection('bom')
         .doc(materialId)
         .update({
-          'totalQuantity': newQuantity,
-          'updatedAt': FieldValue.serverTimestamp(),
-        });
+      'totalQuantity': newQuantity,
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
   }
 
   Future<void> setThreshold(
@@ -128,9 +131,9 @@ class BoMService {
         .collection('bom')
         .doc(materialId)
         .update({
-          'threshold': threshold,
-          'updatedAt': FieldValue.serverTimestamp(),
-        });
+      'threshold': threshold,
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
   }
 
   // Material History Operations
@@ -141,10 +144,9 @@ class BoMService {
         .orderBy('date', descending: true)
         .snapshots()
         .map(
-          (snapshot) =>
-              snapshot.docs
-                  .map((doc) => MaterialHistoryModel.fromFirestore(doc))
-                  .toList(),
+          (snapshot) => snapshot.docs
+              .map((doc) => MaterialHistoryModel.fromFirestore(doc))
+              .toList(),
         );
   }
 
@@ -160,13 +162,12 @@ class BoMService {
       double totalStock = 0;
 
       for (var project in projects.docs) {
-        final bomDoc =
-            await _firestore
-                .collection('projects')
-                .doc(project.id)
-                .collection('bom')
-                .where('materialId', isEqualTo: materialId)
-                .get();
+        final bomDoc = await _firestore
+            .collection('projects')
+            .doc(project.id)
+            .collection('bom')
+            .where('materialId', isEqualTo: materialId)
+            .get();
 
         if (bomDoc.docs.isNotEmpty) {
           final projectBom = ProjectBoMModel.fromFirestore(bomDoc.docs.first);
@@ -270,13 +271,12 @@ class BoMService {
 
       // Subtract allocated stock
       for (var project in projects.docs) {
-        final bomDoc =
-            await _firestore
-                .collection('projects')
-                .doc(project.id)
-                .collection('bom')
-                .where('materialId', isEqualTo: materialId)
-                .get();
+        final bomDoc = await _firestore
+            .collection('projects')
+            .doc(project.id)
+            .collection('bom')
+            .where('materialId', isEqualTo: materialId)
+            .get();
 
         if (bomDoc.docs.isNotEmpty) {
           final projectBom = ProjectBoMModel.fromFirestore(bomDoc.docs.first);
@@ -286,5 +286,50 @@ class BoMService {
 
       return currentStock;
     });
+  }
+
+  // Get materials for a specific project
+  Stream<List<ProjectBoMModel>> getProjectMaterials(String projectId) {
+    return _firestore
+        .collection('projects')
+        .doc(projectId)
+        .collection('bom')
+        .snapshots()
+        .map(
+          (snapshot) => snapshot.docs
+              .map((doc) => ProjectBoMModel.fromFirestore(doc))
+              .toList(),
+        );
+  }
+
+  // Get material requests for a project
+  Stream<List<RequestModel>> getProjectRequests(String projectId) {
+    return _firestore
+        .collection('requests')
+        .where('projectId', isEqualTo: projectId)
+        .where('type', isEqualTo: 'material')
+        .orderBy('timestamp', descending: true)
+        .snapshots()
+        .map(
+          (snapshot) => snapshot.docs
+              .map((doc) => RequestModel.fromFirestore(doc))
+              .toList(),
+        );
+  }
+
+  // Create a new material request
+  Future<void> createRequest(RequestModel request) {
+    return _firestore
+        .collection('requests')
+        .doc(request.id)
+        .set(request.toMap());
+  }
+
+  Future<MaterialModel?> getMaterialById(String materialId) async {
+    final doc = await _firestore.collection('materials').doc(materialId).get();
+    if (doc.exists) {
+      return MaterialModel.fromFirestore(doc);
+    }
+    return null;
   }
 }

@@ -189,6 +189,7 @@ class UserService {
     }
   }
 
+  // Get project managers
   Future<List<Map<String, dynamic>>> getProjectManagers() async {
     try {
       final snapshot = await _firestore
@@ -196,16 +197,47 @@ class UserService {
           .where('role', isEqualTo: 'project_manager')
           .get();
 
-      return snapshot.docs.map((doc) {
-        final data = doc.data();
-        return {
-          'id': doc.id,
-          'name': data['name'] ?? '',
-          'email': data['email'] ?? '',
-        };
-      }).toList();
+      return snapshot.docs
+          .map((doc) => {
+                'id': doc.id,
+                ...doc.data(),
+              })
+          .toList();
     } catch (e) {
-      rethrow;
+      print('Error getting project managers: $e');
+      return [];
+    }
+  }
+
+  // Get user names by IDs
+  Future<List<String>> getUserNamesByIds(List<String> userIds) async {
+    if (userIds.isEmpty) return [];
+
+    try {
+      final snapshot = await _firestore
+          .collection('users')
+          .where(FieldPath.documentId, whereIn: userIds)
+          .get();
+
+      if (snapshot.docs.isEmpty) {
+        return ['Unknown User'];
+      }
+
+      // Create a map of user IDs to names for efficient lookup
+      final Map<String, String> userMap = {};
+      for (var doc in snapshot.docs) {
+        final data = doc.data();
+        final name = data['name'] as String?;
+        if (name != null && name.isNotEmpty) {
+          userMap[doc.id] = name;
+        }
+      }
+
+      // Return names in the same order as the input IDs
+      return userIds.map((id) => userMap[id] ?? 'Unknown User').toList();
+    } catch (e) {
+      print('Error getting user names: $e');
+      return ['Error loading user names'];
     }
   }
 }

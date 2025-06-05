@@ -6,6 +6,7 @@ import 'providers/user_provider.dart';
 import 'providers/project_provider.dart';
 import 'providers/projects_provider.dart';
 import 'providers/notification_provider.dart';
+import 'providers/bom_provider.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/main/main_screen.dart';
 import 'screens/admin/project_details_screen.dart';
@@ -31,6 +32,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (context) => ProjectProvider()),
         ChangeNotifierProvider(create: (context) => ProjectsProvider()),
         ChangeNotifierProvider(create: (context) => NotificationProvider()),
+        ChangeNotifierProvider(create: (context) => BomProvider()),
       ],
       child: Consumer<UserProvider>(
         builder: (context, userProvider, _) {

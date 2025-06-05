@@ -1,12 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../models/project.dart';
+import '../../models/project_bom_model.dart';
 import '../../providers/projects_provider.dart';
+import '../../providers/user_provider.dart';
 import '../../utils/responsive.dart';
 import '../../utils/app_theme.dart';
 import '../../widgets/common/alert_badge.dart';
 import '../../widgets/common/activity_timeline.dart';
 import '../../widgets/common/info_card.dart';
+import '../../services/user_service.dart';
+import '../../services/bom_service.dart';
+import '../../features/bom/widgets/create_bom_widget.dart';
+import '../../features/bom/widgets/display_bom_widget.dart';
+import 'create_bom_screen.dart';
 
 class ProjectDetailsScreen extends StatefulWidget {
   const ProjectDetailsScreen({super.key});
@@ -18,6 +26,105 @@ class ProjectDetailsScreen extends StatefulWidget {
 class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> {
   late Project project;
   bool _isLoading = false;
+  List<String> _projectManagerNames = [];
+  List<ActivityItem> _activities = [];
+  final UserService _userService = UserService();
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final BoMService _bomService = BoMService();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    setState(() => _isLoading = true);
+    try {
+      // Load project manager names
+      final managerNames =
+          await _userService.getUserNamesByIds(project.projectManagerIds);
+      setState(() => _projectManagerNames = managerNames);
+
+      // Load recent activities
+      final activitiesSnapshot = await _firestore
+          .collection('project_activities')
+          .where('projectId', isEqualTo: project.id)
+          .orderBy('timestamp', descending: true)
+          .limit(5)
+          .get();
+
+      final activities = activitiesSnapshot.docs.map((doc) {
+        final data = doc.data();
+        return ActivityItem(
+          title: data['title'] ?? '',
+          description: data['description'] ?? '',
+          time: _formatTimestamp(data['timestamp'] as Timestamp),
+          icon: _getActivityIcon(data['type'] ?? ''),
+          color: _getActivityColor(data['type'] ?? ''),
+        );
+      }).toList();
+
+      setState(() => _activities = activities);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error loading project data: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
+
+  String _formatTimestamp(Timestamp timestamp) {
+    final now = DateTime.now();
+    final date = timestamp.toDate();
+    final difference = now.difference(date);
+
+    if (difference.inDays > 0) {
+      return '${difference.inDays} days ago';
+    } else if (difference.inHours > 0) {
+      return '${difference.inHours} hours ago';
+    } else if (difference.inMinutes > 0) {
+      return '${difference.inMinutes} minutes ago';
+    } else {
+      return 'Just now';
+    }
+  }
+
+  IconData _getActivityIcon(String type) {
+    switch (type.toLowerCase()) {
+      case 'material_request':
+        return Icons.inventory_2_outlined;
+      case 'bom_update':
+        return Icons.edit_note;
+      case 'status_change':
+        return Icons.update;
+      case 'manager_assignment':
+        return Icons.person_add;
+      default:
+        return Icons.info_outline;
+    }
+  }
+
+  Color _getActivityColor(String type) {
+    switch (type.toLowerCase()) {
+      case 'material_request':
+        return AppTheme.primaryColor;
+      case 'bom_update':
+        return AppTheme.infoColor;
+      case 'status_change':
+        return AppTheme.warningColor;
+      case 'manager_assignment':
+        return AppTheme.successColor;
+      default:
+        return Colors.grey;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -52,21 +159,18 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> {
                         return Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // Project Info (left)
                             Expanded(
-                              flex: 3,
+                              flex: 4,
                               child: _buildProjectDetails(),
                             ),
                             const SizedBox(width: 24),
-                            // Recent Activity (right)
                             Expanded(
-                              flex: 2,
+                              flex: 1,
                               child: _buildRecentActivityWithAuditLogs(),
                             ),
                           ],
                         );
                       } else {
-                        // Stack vertically on small screens
                         return Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
@@ -178,15 +282,15 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> {
         _MiniAlert(
           icon: Icons.notifications_active_outlined,
           label: 'Requests',
-          count: 5, // TODO: Get actual count
+          count: 5, // TODO: Get actual count from Firestore
           color: AppTheme.warningColor,
         ),
         const SizedBox(width: 12),
         _MiniAlert(
           icon: Icons.warning_amber_rounded,
           label: 'Low-Stock Materials',
-          count: 2, // TODO: Get actual count
-          color: AppTheme.errorColor, // RED for low stock
+          count: 2, // TODO: Get actual count from Firestore
+          color: AppTheme.errorColor,
         ),
       ],
     );
@@ -194,65 +298,116 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> {
 
   Widget _buildProjectDetails() {
     return InfoCard(
-      title: 'Project Information',
+      title: 'Project Details',
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildInfoRow('Start Date', _formatDate(project.startDate)),
-          _buildInfoRow('End Date', _formatDate(project.endDate)),
+          _buildInfoRow('Project Name', project.name),
+          _buildInfoRow('Location', project.location),
+          _buildInfoRow('Description', project.description),
+          _buildInfoRow(
+              'Start Date', project.startDate.toString().split(' ')[0]),
+          _buildInfoRow('End Date', project.endDate.toString().split(' ')[0]),
           _buildInfoRow('Status', project.status),
-          if (project.description.isNotEmpty)
-            _buildInfoRow('Description', project.description),
-          _buildInfoRow('Project Managers',
-              'John Doe, Jane Smith'), // TODO: Get actual managers
+          _buildInfoRow(
+            'Project Managers',
+            _isLoading
+                ? 'Loading...'
+                : _projectManagerNames.isEmpty
+                    ? 'No Project Manager Assigned'
+                    : _projectManagerNames.join(', '),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildRecentActivity() {
+  Widget _buildRecentActivityWithAuditLogs() {
     return InfoCard(
       title: 'Recent Activity',
-      child: ActivityTimeline(
-        activities: [
-          // TODO: Get actual activities from provider
-          ActivityItem(
-            title: 'Material Request',
-            description: 'John Doe requested 50 bags of cement',
-            time: '2 hours ago',
-            icon: Icons.inventory_2_outlined,
-            color: AppTheme.primaryColor,
-          ),
-          ActivityItem(
-            title: 'BoM Updated',
-            description: 'Added new materials to Bill of Materials',
-            time: '1 day ago',
-            icon: Icons.edit_note,
-            color: AppTheme.infoColor,
-          ),
-        ],
-      ),
+      child: _activities.isEmpty
+          ? const Center(
+              child: Padding(
+                padding: EdgeInsets.all(16.0),
+                child: Text(
+                  'No recent activity',
+                  style: TextStyle(color: Colors.grey),
+                ),
+              ),
+            )
+          : ActivityTimeline(activities: _activities),
     );
   }
 
   Widget _buildBillOfMaterialsButton() {
-    return SizedBox(
-      width: double.infinity,
-      child: ElevatedButton.icon(
-        onPressed: () {
-          Navigator.pushNamed(
-            context,
-            '/admin/project-bom',
-            arguments: project.id,
-          );
-        },
-        icon: const Icon(Icons.inventory_2),
-        label: const Text('View Bill of Materials'),
-        style: ElevatedButton.styleFrom(
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          textStyle: const TextStyle(fontSize: 16),
-        ),
+    return StreamBuilder<List<ProjectBoMModel>>(
+      stream: _bomService.getProjectMaterials(project.id),
+      builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return const SizedBox.shrink();
+        }
+
+        if (!snapshot.hasData) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        final materials = snapshot.data!;
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Bill of Materials',
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+                if (materials.isEmpty)
+                  ElevatedButton.icon(
+                    onPressed: () => _navigateToCreateBom(context),
+                    icon: const Icon(Icons.add),
+                    label: const Text('Create BOM'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.primaryColor,
+                      foregroundColor: Colors.white,
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            if (materials.isEmpty)
+              const Center(
+                child: Text(
+                  'No Bill of Materials created yet',
+                  style: TextStyle(color: Colors.grey),
+                ),
+              )
+            else
+              DisplayBoMWidget(
+                projectId: project.id,
+                onBomUpdated: () {
+                  setState(() {});
+                },
+              ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _navigateToCreateBom(BuildContext context) async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => CreateBomScreen(project: project),
       ),
     );
+
+    if (result == true) {
+      // Refresh the project details
+      setState(() {});
+    }
   }
 
   Widget _buildInfoRow(String label, String value) {
@@ -328,105 +483,6 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> {
   void _showDeleteDialog() {
     // TODO: Implement delete dialog
   }
-
-  void _showAuditLogsDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        child: SizedBox(
-          width: 500,
-          height: 500,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(20.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'Audit Log',
-                      style:
-                          TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.close),
-                      onPressed: () => Navigator.of(context).pop(),
-                    ),
-                  ],
-                ),
-              ),
-              const Divider(height: 1),
-              Expanded(
-                child: ListView(
-                  padding: const EdgeInsets.all(20),
-                  children: const [
-                    // Placeholder audit log entries
-                    ListTile(
-                      leading: Icon(Icons.edit, color: Colors.blue),
-                      title: Text('Project details updated'),
-                      subtitle: Text('by Admin Bob, 2025-05-19 02:55 PM'),
-                    ),
-                    ListTile(
-                      leading: Icon(Icons.inventory_2, color: Colors.orange),
-                      title: Text('BoM created'),
-                      subtitle: Text('by Admin Alice, 2025-05-01 10:00 AM'),
-                    ),
-                    ListTile(
-                      leading: Icon(Icons.request_page, color: Colors.green),
-                      title: Text('Material request approved'),
-                      subtitle: Text('by Admin Bob, 2025-05-19 03:00 PM'),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildRecentActivityWithAuditLogs() {
-    return InfoCard(
-      title: 'Recent Activity',
-      actions: [
-        ElevatedButton.icon(
-          onPressed: _showAuditLogsDialog,
-          icon: const Icon(Icons.list_alt),
-          label: const Text('Audit Logs'),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.grey[800],
-            foregroundColor: Colors.white,
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-            textStyle: const TextStyle(fontSize: 13),
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-            elevation: 0,
-          ),
-        ),
-      ],
-      child: ActivityTimeline(
-        activities: [
-          ActivityItem(
-            title: 'Material Request',
-            description: 'John Doe requested 50 bags of cement',
-            time: '2 hours ago',
-            icon: Icons.inventory_2_outlined,
-            color: AppTheme.primaryColor,
-          ),
-          ActivityItem(
-            title: 'BoM Updated',
-            description: 'Added new materials to Bill of Materials',
-            time: '1 day ago',
-            icon: Icons.edit_note,
-            color: AppTheme.infoColor,
-          ),
-        ],
-      ),
-    );
-  }
 }
 
 class _MiniAlert extends StatelessWidget {
@@ -445,22 +501,15 @@ class _MiniAlert extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.08),
-        borderRadius: BorderRadius.circular(10),
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Container(
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.15),
-              borderRadius: BorderRadius.circular(6),
-            ),
-            padding: const EdgeInsets.all(4),
-            child: Icon(icon, color: color, size: 18),
-          ),
+          Icon(icon, size: 16, color: color),
           const SizedBox(width: 8),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -468,17 +517,17 @@ class _MiniAlert extends StatelessWidget {
               Text(
                 label,
                 style: TextStyle(
-                  fontSize: 13,
-                  color: Colors.grey[800],
+                  fontSize: 12,
+                  color: color,
                   fontWeight: FontWeight.w500,
                 ),
               ),
               Text(
                 count.toString(),
                 style: TextStyle(
-                  fontSize: 18,
+                  fontSize: 16,
+                  color: color,
                   fontWeight: FontWeight.bold,
-                  color: Colors.grey[900],
                 ),
               ),
             ],
