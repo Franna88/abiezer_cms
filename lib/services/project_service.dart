@@ -120,4 +120,28 @@ class ProjectService {
       return 0;
     }
   }
+
+  // Add a manager to a project's project_manager_ids array
+  Future<void> addManagerToProject(String projectId, String userId) async {
+    try {
+      await _firestore.collection('projects').doc(projectId).update({
+        'project_manager_ids': FieldValue.arrayUnion([userId]),
+      });
+    } catch (e) {
+      print('Error adding manager to project: $e');
+      rethrow;
+    }
+  }
+
+  // Remove a manager from a project's project_manager_ids array
+  Future<void> removeManagerFromProject(String projectId, String userId) async {
+    try {
+      await _firestore.collection('projects').doc(projectId).update({
+        'project_manager_ids': FieldValue.arrayRemove([userId]),
+      });
+    } catch (e) {
+      print('Error removing manager from project: $e');
+      rethrow;
+    }
+  }
 }

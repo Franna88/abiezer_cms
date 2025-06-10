@@ -17,90 +17,89 @@ class MaterialCard extends StatelessWidget {
 
     return showDialog(
       context: context,
-      builder:
-          (context) => Dialog(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-            ),
-            child: Container(
-              padding: EdgeInsets.all(AppSpacing.lg),
-              constraints: const BoxConstraints(maxWidth: 600, maxHeight: 500),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+        ),
+        child: Container(
+          padding: EdgeInsets.all(AppSpacing.lg),
+          constraints: const BoxConstraints(maxWidth: 600, maxHeight: 500),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Usage History - ${material.name}',
-                        style: AppTextStyles.heading2,
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.close),
-                        onPressed: () => Navigator.pop(context),
-                      ),
-                    ],
+                  Text(
+                    'Usage History - ${material.name}',
+                    style: AppTextStyles.heading2,
                   ),
-                  const Divider(),
-                  Expanded(
-                    child: StreamBuilder<List<MaterialHistoryModel>>(
-                      stream: bomService.getMaterialHistory(material.id),
-                      builder: (context, snapshot) {
-                        if (snapshot.hasError) {
-                          return Center(
-                            child: Text('Error: ${snapshot.error}'),
-                          );
-                        }
-
-                        if (!snapshot.hasData) {
-                          return const Center(
-                            child: CircularProgressIndicator(),
-                          );
-                        }
-
-                        final history = snapshot.data!;
-                        if (history.isEmpty) {
-                          return const Center(
-                            child: Text('No usage history available'),
-                          );
-                        }
-
-                        return ListView.separated(
-                          itemCount: history.length,
-                          separatorBuilder: (_, __) => const Divider(),
-                          itemBuilder: (context, index) {
-                            final record = history[index];
-                            return ListTile(
-                              title: Text(
-                                'Project: ${record.projectName}',
-                                style: AppTextStyles.body1,
-                              ),
-                              subtitle: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    '${record.action.toUpperCase()}: ${record.quantity} ${material.unit}',
-                                    style: AppTextStyles.body2,
-                                  ),
-                                  Text(
-                                    record.date.toString(),
-                                    style: AppTextStyles.body2.copyWith(
-                                      color: AppColors.textSecondary,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            );
-                          },
-                        );
-                      },
-                    ),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.pop(context),
                   ),
                 ],
               ),
-            ),
+              const Divider(),
+              Expanded(
+                child: StreamBuilder<List<MaterialHistoryModel>>(
+                  stream: bomService.getMaterialHistory(material.id),
+                  builder: (context, snapshot) {
+                    if (snapshot.hasError) {
+                      return Center(
+                        child: Text('Error: ${snapshot.error}'),
+                      );
+                    }
+
+                    if (!snapshot.hasData) {
+                      return const Center(
+                        child: CircularProgressIndicator(),
+                      );
+                    }
+
+                    final history = snapshot.data!;
+                    if (history.isEmpty) {
+                      return const Center(
+                        child: Text('No usage history available'),
+                      );
+                    }
+
+                    return ListView.separated(
+                      itemCount: history.length,
+                      separatorBuilder: (_, __) => const Divider(),
+                      itemBuilder: (context, index) {
+                        final record = history[index];
+                        return ListTile(
+                          title: Text(
+                            'Project: ${record.projectName}',
+                            style: AppTextStyles.body1,
+                          ),
+                          subtitle: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '${record.action.toUpperCase()}: ${record.quantity} ${material.unit}',
+                                style: AppTextStyles.body2,
+                              ),
+                              Text(
+                                record.date.toString(),
+                                style: AppTextStyles.body2.copyWith(
+                                  color: AppColors.textSecondary,
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    );
+                  },
+                ),
+              ),
+            ],
           ),
+        ),
+      ),
     );
   }
 
@@ -112,101 +111,99 @@ class MaterialCard extends StatelessWidget {
 
     return showDialog(
       context: context,
-      builder:
-          (context) => Dialog(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-            ),
-            child: Container(
-              padding: EdgeInsets.all(AppSpacing.lg),
-              constraints: const BoxConstraints(maxWidth: 400),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+        ),
+        child: Container(
+          padding: EdgeInsets.all(AppSpacing.lg),
+          constraints: const BoxConstraints(maxWidth: 400),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Add Stock - ${material.name}',
+                  style: AppTextStyles.heading2,
+                ),
+                SizedBox(height: AppSpacing.md),
+                TextFormField(
+                  controller: _quantityController,
+                  decoration: InputDecoration(
+                    labelText: 'Quantity*',
+                    hintText: 'Enter quantity',
+                    suffixText: material.unit,
+                  ),
+                  keyboardType: TextInputType.number,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter quantity';
+                    }
+                    if (double.tryParse(value) == null) {
+                      return 'Please enter a valid number';
+                    }
+                    final quantity = double.parse(value);
+                    if (quantity <= 0) {
+                      return 'Quantity must be greater than 0';
+                    }
+                    return null;
+                  },
+                ),
+                SizedBox(height: AppSpacing.md),
+                TextFormField(
+                  controller: _reasonController,
+                  decoration: const InputDecoration(
+                    labelText: 'Reason (Optional)',
+                    hintText: 'Enter reason for adding stock',
+                  ),
+                  maxLines: 2,
+                ),
+                SizedBox(height: AppSpacing.lg),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
                   children: [
-                    Text(
-                      'Add Stock - ${material.name}',
-                      style: AppTextStyles.heading2,
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('Cancel'),
                     ),
-                    SizedBox(height: AppSpacing.md),
-                    TextFormField(
-                      controller: _quantityController,
-                      decoration: InputDecoration(
-                        labelText: 'Quantity*',
-                        hintText: 'Enter quantity',
-                        suffixText: material.unit,
-                      ),
-                      keyboardType: TextInputType.number,
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter quantity';
+                    SizedBox(width: AppSpacing.md),
+                    ElevatedButton(
+                      onPressed: () async {
+                        if (_formKey.currentState!.validate()) {
+                          try {
+                            await bomService.addStock(
+                              material.id,
+                              double.parse(_quantityController.text),
+                              reason: _reasonController.text.isNotEmpty
+                                  ? _reasonController.text
+                                  : null,
+                            );
+                            Navigator.pop(context);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Stock added successfully'),
+                              ),
+                            );
+                          } catch (e) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Error: ${e.toString()}'),
+                              ),
+                            );
+                          }
                         }
-                        if (double.tryParse(value) == null) {
-                          return 'Please enter a valid number';
-                        }
-                        final quantity = double.parse(value);
-                        if (quantity <= 0) {
-                          return 'Quantity must be greater than 0';
-                        }
-                        return null;
                       },
-                    ),
-                    SizedBox(height: AppSpacing.md),
-                    TextFormField(
-                      controller: _reasonController,
-                      decoration: const InputDecoration(
-                        labelText: 'Reason (Optional)',
-                        hintText: 'Enter reason for adding stock',
-                      ),
-                      maxLines: 2,
-                    ),
-                    SizedBox(height: AppSpacing.lg),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(context),
-                          child: const Text('Cancel'),
-                        ),
-                        SizedBox(width: AppSpacing.md),
-                        ElevatedButton(
-                          onPressed: () async {
-                            if (_formKey.currentState!.validate()) {
-                              try {
-                                await bomService.addStock(
-                                  material.id,
-                                  double.parse(_quantityController.text),
-                                  reason:
-                                      _reasonController.text.isNotEmpty
-                                          ? _reasonController.text
-                                          : null,
-                                );
-                                Navigator.pop(context);
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('Stock added successfully'),
-                                  ),
-                                );
-                              } catch (e) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text('Error: ${e.toString()}'),
-                                  ),
-                                );
-                              }
-                            }
-                          },
-                          child: const Text('Add Stock'),
-                        ),
-                      ],
+                      child: const Text('Add Stock'),
                     ),
                   ],
                 ),
-              ),
+              ],
             ),
           ),
+        ),
+      ),
     );
   }
 

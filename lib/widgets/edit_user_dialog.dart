@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../models/user_model.dart';
 import '../services/user_service.dart';
+import '../services/project_service.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class EditUserDialog extends StatefulWidget {
   final UserModel user;
@@ -21,6 +23,7 @@ class _EditUserDialogState extends State<EditUserDialog> {
   final _formKey = GlobalKey<FormState>();
   final _userService = UserService();
   final _imagePicker = ImagePicker();
+  final _projectService = ProjectService();
 
   late final TextEditingController _nameController;
   late final TextEditingController _emailController;
@@ -32,7 +35,7 @@ class _EditUserDialogState extends State<EditUserDialog> {
   bool _isLoading = false;
 
   // Empty projects list - will be populated from backend later
-  final List<String> _availableProjects = [];
+  List<Map<String, dynamic>> _projects = [];
 
   @override
   void initState() {
@@ -43,6 +46,19 @@ class _EditUserDialogState extends State<EditUserDialog> {
     _phoneController = TextEditingController(text: widget.user.phone);
     _selectedRole = widget.user.role;
     _selectedProjects = List.from(widget.user.assignedProjects);
+    _fetchProjects();
+  }
+
+  Future<void> _fetchProjects() async {
+    final snapshot = await FirebaseFirestore.instance
+        .collection('projects')
+        .where('status', isEqualTo: 'Active')
+        .get();
+    setState(() {
+      _projects = snapshot.docs
+          .map((doc) => {'id': doc.id, 'name': doc['name'] ?? ''})
+          .toList();
+    });
   }
 
   Future<void> _pickImage() async {
@@ -80,6 +96,8 @@ class _EditUserDialogState extends State<EditUserDialog> {
       });
 
       try {
+        final previousProjects =
+            List<String>.from(widget.user.assignedProjects);
         final updatedUser = await _userService.updateUser(
           userId: widget.user.id,
           name: _nameController.text.trim(),
@@ -89,6 +107,22 @@ class _EditUserDialogState extends State<EditUserDialog> {
           assignedProjects: _selectedRole == 'admin' ? [] : _selectedProjects,
         );
 
+        if (updatedUser != null && _selectedRole != 'admin') {
+          // Add user to new projects
+          for (final projectId in _selectedProjects) {
+            if (!previousProjects.contains(projectId)) {
+              await _projectService.addManagerToProject(
+                  projectId, widget.user.id);
+            }
+          }
+          // Remove user from unselected projects
+          for (final projectId in previousProjects) {
+            if (!_selectedProjects.contains(projectId)) {
+              await _projectService.removeManagerFromProject(
+                  projectId, widget.user.id);
+            }
+          }
+        }
         if (updatedUser != null) {
           widget.onUserUpdated(updatedUser);
           Navigator.of(context).pop();
@@ -272,12 +306,13 @@ class _EditUserDialogState extends State<EditUserDialog> {
                     Wrap(
                       spacing: 8,
                       runSpacing: 8,
-                      children: _availableProjects.map((project) {
-                        final isSelected = _selectedProjects.contains(project);
+                      children: _projects.map((project) {
+                        final isSelected =
+                            _selectedProjects.contains(project['id']);
                         return FilterChip(
-                          label: Text(project),
+                          label: Text(project['name'] ?? ''),
                           selected: isSelected,
-                          onSelected: (_) => _toggleProject(project),
+                          onSelected: (_) => _toggleProject(project['id']!),
                         );
                       }).toList(),
                     ),

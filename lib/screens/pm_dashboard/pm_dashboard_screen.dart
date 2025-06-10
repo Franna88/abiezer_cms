@@ -245,11 +245,11 @@ class _PMDashboardScreenState extends State<PMDashboardScreen> {
                     physics: const NeverScrollableScrollPhysics(),
                     gridDelegate:
                         const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          crossAxisSpacing: 16,
-                          mainAxisSpacing: 16,
-                          childAspectRatio: 1.2,
-                        ),
+                      crossAxisCount: 2,
+                      crossAxisSpacing: 16,
+                      mainAxisSpacing: 16,
+                      childAspectRatio: 1.2,
+                    ),
                     itemCount: projects.length,
                     itemBuilder: (context, index) {
                       final project = projects[index];
@@ -456,19 +456,18 @@ class _PMDashboardScreenState extends State<PMDashboardScreen> {
                   type: notification.type,
                   isRead: notification.isRead,
                   actionLabel: _getActionLabel(notification.type),
-                  onAction:
-                      notification.type == NotificationType.lowStock
-                          ? () {
-                            // Navigate to BoM for the project
-                            if (notification.projectId != null) {
-                              Navigator.pushNamed(
-                                context,
-                                '/bom',
-                                arguments: notification.projectId,
-                              );
-                            }
+                  onAction: notification.type == NotificationType.lowStock
+                      ? () {
+                          // Navigate to BoM for the project
+                          if (notification.projectId != null) {
+                            Navigator.pushNamed(
+                              context,
+                              '/bom',
+                              arguments: notification.projectId,
+                            );
                           }
-                          : null,
+                        }
+                      : null,
                 );
               },
             );

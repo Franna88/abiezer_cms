@@ -25,89 +25,87 @@ class _ProjectBoMViewState extends State<ProjectBoMView> {
 
     return showDialog(
       context: context,
-      builder:
-          (context) => AlertDialog(
-            title: const Text('Adjust Material'),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextFormField(
-                  controller: _quantityController,
-                  decoration: const InputDecoration(
-                    labelText: 'Total Quantity',
-                    hintText: 'Enter new quantity',
-                  ),
-                  keyboardType: TextInputType.number,
-                ),
-                SizedBox(height: AppSpacing.md),
-                TextFormField(
-                  controller: _thresholdController,
-                  decoration: const InputDecoration(
-                    labelText: 'Low Stock Threshold',
-                    hintText: 'Enter threshold value',
-                  ),
-                  keyboardType: TextInputType.number,
-                ),
-              ],
+      builder: (context) => AlertDialog(
+        title: const Text('Adjust Material'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextFormField(
+              controller: _quantityController,
+              decoration: const InputDecoration(
+                labelText: 'Total Quantity',
+                hintText: 'Enter new quantity',
+              ),
+              keyboardType: TextInputType.number,
             ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Cancel'),
+            SizedBox(height: AppSpacing.md),
+            TextFormField(
+              controller: _thresholdController,
+              decoration: const InputDecoration(
+                labelText: 'Low Stock Threshold',
+                hintText: 'Enter threshold value',
               ),
-              ElevatedButton(
-                onPressed: () async {
-                  try {
-                    final newQuantity = double.parse(_quantityController.text);
-                    final newThreshold = double.parse(
-                      _thresholdController.text,
-                    );
-
-                    await _bomService.adjustQuantity(
-                      widget.projectId,
-                      material.id,
-                      newQuantity,
-                    );
-
-                    await _bomService.setThreshold(
-                      widget.projectId,
-                      material.id,
-                      newThreshold,
-                    );
-
-                    if (mounted) Navigator.pop(context);
-                  } catch (e) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Error: ${e.toString()}')),
-                    );
-                  }
-                },
-                child: const Text('Save'),
-              ),
-            ],
+              keyboardType: TextInputType.number,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
           ),
+          ElevatedButton(
+            onPressed: () async {
+              try {
+                final newQuantity = double.parse(_quantityController.text);
+                final newThreshold = double.parse(
+                  _thresholdController.text,
+                );
+
+                await _bomService.adjustQuantity(
+                  widget.projectId,
+                  material.id,
+                  newQuantity,
+                );
+
+                await _bomService.setThreshold(
+                  widget.projectId,
+                  material.id,
+                  newThreshold,
+                );
+
+                if (mounted) Navigator.pop(context);
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Error: ${e.toString()}')),
+                );
+              }
+            },
+            child: const Text('Save'),
+          ),
+        ],
+      ),
     );
   }
 
   List<DataColumn> get _projectColumns => [
-    DataColumn(label: Text('Material', style: AppTextStyles.heading2)),
-    DataColumn(label: Text('Total', style: AppTextStyles.heading2)),
-    DataColumn(label: Text('Used', style: AppTextStyles.heading2)),
-    DataColumn(label: Text('Remaining', style: AppTextStyles.heading2)),
-    DataColumn(label: Text('Threshold', style: AppTextStyles.heading2)),
-    DataColumn(label: Text('Status', style: AppTextStyles.heading2)),
-    const DataColumn(label: Text('Actions')),
-  ];
+        DataColumn(label: Text('Material', style: AppTextStyles.heading2)),
+        DataColumn(label: Text('Total', style: AppTextStyles.heading2)),
+        DataColumn(label: Text('Used', style: AppTextStyles.heading2)),
+        DataColumn(label: Text('Remaining', style: AppTextStyles.heading2)),
+        DataColumn(label: Text('Threshold', style: AppTextStyles.heading2)),
+        DataColumn(label: Text('Status', style: AppTextStyles.heading2)),
+        const DataColumn(label: Text('Actions')),
+      ];
 
   List<DataRow> _buildProjectRows(List<ProjectBoMModel> materials) {
     return materials.map((material) {
       final isLowStock = material.isLowStock;
 
       return DataRow(
-        color:
-            isLowStock
-                ? MaterialStateProperty.all(AppColors.warning.withOpacity(0.1))
-                : null,
+        color: isLowStock
+            ? MaterialStateProperty.all(AppColors.warning.withOpacity(0.1))
+            : null,
         cells: [
           DataCell(Text(material.materialId)), // TODO: Join with material name
           DataCell(Text(material.totalQuantity.toString())),

@@ -3,6 +3,7 @@ import '../models/material_model.dart';
 import '../models/project_bom_model.dart';
 import '../models/material_history_model.dart';
 import '../models/request_model.dart';
+import 'package:rxdart/rxdart.dart';
 
 class BoMService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -86,13 +87,49 @@ class BoMService {
         .add(projectMaterial.toFirestore());
   }
 
-  Future<void> updateProjectMaterial(ProjectBoMModel projectMaterial) {
-    return _firestore
+  Future<void> updateProjectMaterial(ProjectBoMModel projectMaterial,
+      {required String userId}) async {
+    final bomRef = _firestore
         .collection('projects')
         .doc(projectMaterial.projectId)
         .collection('bom')
-        .doc(projectMaterial.id)
-        .update(projectMaterial.toFirestore());
+        .doc(projectMaterial.id);
+    final historyRef = _firestore
+        .collection('projects')
+        .doc(projectMaterial.projectId)
+        .collection('bom_history')
+        .doc();
+    final auditRef = _firestore.collection('audit_log').doc();
+
+    final doc = await bomRef.get();
+    if (doc.exists) {
+      // Save old version to history
+      await historyRef.set({
+        'materialId': doc['materialId'],
+        'projectId': doc['projectId'],
+        'totalQuantity': doc['totalQuantity'],
+        'usedQuantity': doc['usedQuantity'],
+        'threshold': doc['threshold'],
+        'createdAt': doc['createdAt'],
+        'updatedAt': doc['updatedAt'],
+        'versionedAt': FieldValue.serverTimestamp(),
+        'versionedBy': userId,
+      });
+      // Update the BOM
+      await bomRef.update(projectMaterial.toFirestore());
+    } else {
+      // Create the BOM if it doesn't exist
+      await bomRef.set(projectMaterial.toFirestore());
+    }
+    // Write audit log
+    await auditRef.set({
+      'action': 'update_bom_material',
+      'userId': userId,
+      'materialId': projectMaterial.materialId,
+      'projectId': projectMaterial.projectId,
+      'timestamp': FieldValue.serverTimestamp(),
+      'details': projectMaterial.toFirestore(),
+    });
   }
 
   Future<void> setProjectMaterial(ProjectBoMModel projectMaterial) {
@@ -331,5 +368,126 @@ class BoMService {
       return MaterialModel.fromFirestore(doc);
     }
     return null;
+  }
+
+  Future<MaterialModel?> getMaterial(String materialId) async {
+    try {
+      final doc =
+          await _firestore.collection('materials').doc(materialId).get();
+      if (doc.exists) {
+        return MaterialModel.fromFirestore(doc);
+      }
+      return null;
+    } catch (e) {
+      print('Error getting material: $e');
+      return null;
+    }
+  }
+
+  Future<Map<String, dynamic>?> getProjectBom(String projectId) async {
+    try {
+      final doc =
+          await _firestore.collection('billOfMaterials').doc(projectId).get();
+      if (doc.exists) {
+        return doc.data();
+      }
+      return null;
+    } catch (e) {
+      print('Error getting project BOM: $e');
+      return null;
+    }
+  }
+
+  Future<void> updateProjectBom(ProjectBoMModel projectBom) async {
+    try {
+      await _firestore
+          .collection('billOfMaterials')
+          .doc(projectBom.projectId)
+          .collection('materials')
+          .doc(projectBom.materialId)
+          .set(projectBom.toFirestore());
+    } catch (e) {
+      print('Error updating project material: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> removeProjectMaterial(
+      String projectId, String materialId) async {
+    await _firestore
+        .collection('projects')
+        .doc(projectId)
+        .collection('bom')
+        .doc(materialId)
+        .delete();
+  }
+
+  Stream<List<Map<String, dynamic>>> getProjectAuditTrail(String projectId) {
+    final auditLogStream = _firestore
+        .collection('audit_log')
+        .where('projectId', isEqualTo: projectId)
+        .orderBy('timestamp', descending: true)
+        .snapshots()
+        .map((snapshot) => snapshot.docs.map((doc) {
+              final data = doc.data();
+              return {
+                'type': data['action'] ?? 'edit_bom',
+                'timestamp': (data['timestamp'] as Timestamp).toDate(),
+                'user': data['userId'] ?? '',
+                'description':
+                    'BOM Edit: ' + (data['details']?.toString() ?? ''),
+              };
+            }).toList());
+
+    final materialHistoryStream = _firestore
+        .collection('material_history')
+        .where('projectId', isEqualTo: projectId)
+        .orderBy('date', descending: true)
+        .snapshots()
+        .map((snapshot) => snapshot.docs.map((doc) {
+              final data = doc.data();
+              return {
+                'type': data['action'] ?? 'use_material',
+                'timestamp': (data['date'] as Timestamp).toDate(),
+                'user': data['userId'] ?? '',
+                'description': 'Material History: ' +
+                    (data['quantity']?.toString() ?? '') +
+                    ' units',
+              };
+            }).toList());
+
+    final materialMovementsStream = _firestore
+        .collection('materialMovements')
+        .doc(projectId)
+        .collection('movements')
+        .orderBy('timestamp', descending: true)
+        .snapshots()
+        .map((snapshot) => snapshot.docs.map((doc) {
+              final data = doc.data();
+              return {
+                'type': data['actionType'] ?? 'use_material',
+                'timestamp': (data['timestamp'] as Timestamp).toDate(),
+                'user': data['performedBy'] ?? '',
+                'description': 'Material Movement: ' +
+                    (data['quantity']?.toString() ?? '') +
+                    ' units',
+              };
+            }).toList());
+
+    return Rx.combineLatest3<
+        List<Map<String, dynamic>>,
+        List<Map<String, dynamic>>,
+        List<Map<String, dynamic>>,
+        List<Map<String, dynamic>>>(
+      auditLogStream,
+      materialHistoryStream,
+      materialMovementsStream,
+      (audit, history, movements) {
+        final all = [...audit, ...history, ...movements];
+        all.sort((a, b) =>
+            (b['timestamp'] as DateTime).compareTo(a['timestamp'] as DateTime));
+        return all;
+      },
+    );
   }
 }

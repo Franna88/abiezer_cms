@@ -2,11 +2,13 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/user_model.dart';
 import 'audit_service.dart';
+import 'project_service.dart';
 
 class UserService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final AuditService _auditService = AuditService();
+  final ProjectService _projectService = ProjectService();
 
   // Get all users stream
   Stream<List<UserModel>> getAllUsers() {
@@ -51,6 +53,13 @@ class UserService {
             .doc(userCredential.user!.uid)
             .set(newUser.toMap());
 
+        // Add user to selected projects' project_manager_ids
+        if (role != 'admin') {
+          for (final projectId in assignedProjects) {
+            await _projectService.addManagerToProject(projectId, newUser.id);
+          }
+        }
+
         // Log the creation
         final currentUser = _auth.currentUser;
         if (currentUser != null) {
@@ -94,6 +103,22 @@ class UserService {
           .collection('users')
           .doc(userId)
           .update(updatedUser.toMap());
+
+      // Update project_manager_ids in projects
+      if (role != 'admin') {
+        // Add user to new projects
+        for (final projectId in assignedProjects) {
+          if (!oldUser.assignedProjects.contains(projectId)) {
+            await _projectService.addManagerToProject(projectId, userId);
+          }
+        }
+        // Remove user from unselected projects
+        for (final projectId in oldUser.assignedProjects) {
+          if (!assignedProjects.contains(projectId)) {
+            await _projectService.removeManagerFromProject(projectId, userId);
+          }
+        }
+      }
 
       // Log the update
       final currentUser = _auth.currentUser;

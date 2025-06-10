@@ -311,11 +311,7 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> {
           _buildInfoRow('Status', project.status),
           _buildInfoRow(
             'Project Managers',
-            _isLoading
-                ? 'Loading...'
-                : _projectManagerNames.isEmpty
-                    ? 'No Project Manager Assigned'
-                    : _projectManagerNames.join(', '),
+            _projectManagerNames.join(', '),
           ),
         ],
       ),
@@ -363,24 +359,59 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> {
                   'Bill of Materials',
                   style: Theme.of(context).textTheme.titleLarge,
                 ),
-                if (materials.isEmpty)
-                  ElevatedButton.icon(
-                    onPressed: () => _navigateToCreateBom(context),
-                    icon: const Icon(Icons.add),
-                    label: const Text('Create BOM'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.primaryColor,
-                      foregroundColor: Colors.white,
-                    ),
-                  ),
               ],
             ),
             const SizedBox(height: 16),
             if (materials.isEmpty)
-              const Center(
-                child: Text(
-                  'No Bill of Materials created yet',
-                  style: TextStyle(color: Colors.grey),
+              Center(
+                child: Card(
+                  elevation: 2,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16)),
+                  color: Colors.white,
+                  margin:
+                      const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+                  child: Padding(
+                    padding: const EdgeInsets.all(32.0),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Image.asset(
+                          'assets/images/empty_bom.png',
+                          height: 120,
+                        ),
+                        const SizedBox(height: 24),
+                        Text(
+                          'No Bill of Materials Yet',
+                          style:
+                              Theme.of(context).textTheme.titleLarge?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                    color: Theme.of(context).primaryColor,
+                                  ),
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          "Start by creating a Bill of Materials to manage your project's resources efficiently.",
+                          textAlign: TextAlign.center,
+                          style: Theme.of(context).textTheme.bodyMedium,
+                        ),
+                        const SizedBox(height: 24),
+                        ElevatedButton.icon(
+                          onPressed: () => _navigateToCreateBom(context),
+                          icon: const Icon(Icons.add),
+                          label: const Text('Create BOM'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Theme.of(context).primaryColor,
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 24, vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               )
             else

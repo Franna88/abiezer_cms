@@ -4,19 +4,25 @@ import '../../../models/material_model.dart';
 import '../../../models/project_bom_model.dart';
 import '../../../models/request_model.dart';
 import '../../../models/material_history_model.dart';
+import '../../../models/project.dart';
 import '../../../services/bom_service.dart';
 import '../../../utils/app_theme.dart';
 import '../../../utils/responsive.dart';
 import '../../../widgets/common/info_card.dart';
+import '../../../screens/bom/edit_bom_screen.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../../providers/user_provider.dart';
 
 class DisplayBoMWidget extends StatefulWidget {
   final String projectId;
   final VoidCallback onBomUpdated;
+  final bool isEditable;
 
   const DisplayBoMWidget({
     super.key,
     required this.projectId,
     required this.onBomUpdated,
+    this.isEditable = true,
   });
 
   @override
@@ -25,6 +31,7 @@ class DisplayBoMWidget extends StatefulWidget {
 
 class _DisplayBoMWidgetState extends State<DisplayBoMWidget> {
   final BoMService _bomService = BoMService();
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   bool _isLoading = false;
   String? _error;
   final _requestQuantityController = TextEditingController();
@@ -42,17 +49,269 @@ class _DisplayBoMWidgetState extends State<DisplayBoMWidget> {
   Widget build(BuildContext context) {
     return InfoCard(
       title: 'Bill of Materials',
+      actions: [
+        if (widget.isEditable)
+          Row(
+            children: [
+              ElevatedButton.icon(
+                onPressed: _navigateToEditBom,
+                icon: const Icon(Icons.edit, color: Colors.white),
+                label: const Text('Edit Bill of Materials',
+                    style: TextStyle(color: Colors.white)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.primaryColor,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(24),
+                  ),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  elevation: 2,
+                ),
+              ),
+              const SizedBox(width: 12),
+              ElevatedButton.icon(
+                onPressed: _showProjectAuditTrail,
+                icon: const Icon(Icons.history, color: Colors.white),
+                label: const Text('Audit Trail',
+                    style: TextStyle(color: Colors.white)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.grey[700],
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(24),
+                  ),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  elevation: 2,
+                ),
+              ),
+            ],
+          ),
+      ],
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildBomSummary(),
           const SizedBox(height: 16),
           _buildBomList(),
-          const SizedBox(height: 24),
-          _buildMaterialRequests(),
         ],
       ),
     );
+  }
+
+  Future<void> _navigateToEditBom() async {
+    try {
+      // Fetch project details
+      final projectDoc =
+          await _firestore.collection('projects').doc(widget.projectId).get();
+      if (!projectDoc.exists) throw Exception('Project not found');
+      final project = Project.fromFirestore(projectDoc);
+
+      // Fetch BOM materials from the correct subcollection
+      final bomSnapshot = await _firestore
+          .collection('projects')
+          .doc(widget.projectId)
+          .collection('bom')
+          .get();
+      final bomMaterials = bomSnapshot.docs
+          .map((doc) => ProjectBoMModel.fromFirestore(doc))
+          .toList();
+
+      // Navigate to edit screen, passing the list
+      final result = await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => EditBomScreen(
+            project: project,
+            existingBomMaterials: bomMaterials,
+          ),
+        ),
+      );
+
+      if (result == true) widget.onBomUpdated();
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error loading BOM: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  Future<void> _showProjectAuditTrail() async {
+    await showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Bill of Materials Audit Trail'),
+        content: SizedBox(
+          width: 500,
+          height: 500,
+          child: _buildProjectAuditTrail(),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProjectAuditTrail() {
+    return StreamBuilder<List<Map<String, dynamic>>>(
+      stream: _bomService.getProjectAuditTrail(widget.projectId),
+      builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Text('Error loading audit trail: \\${snapshot.error}',
+                style: const TextStyle(color: Colors.red)),
+          );
+        }
+        if (!snapshot.hasData) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        final events = snapshot.data!;
+        if (events.isEmpty) {
+          return const Padding(
+            padding: EdgeInsets.all(8.0),
+            child: Text('No audit trail events for this project.'),
+          );
+        }
+        // Fetch all users and all materials for name resolution
+        return FutureBuilder<Map<String, String>>(
+          future: _fetchUserAndMaterialNames(),
+          builder: (context, nameSnapshot) {
+            final nameMap = nameSnapshot.data ?? {};
+            return ListView.separated(
+              itemCount: events.length,
+              separatorBuilder: (_, __) => const Divider(),
+              itemBuilder: (context, index) {
+                final event = events[index];
+                return ListTile(
+                  leading: Icon(_getAuditIcon(event['type'])),
+                  title: Text(_formatAuditDescription(event, nameMap)),
+                  subtitle: Text(
+                      'By: \\${_formatUser(event['user'], nameMap)} • \\${_formatTimestamp(event['timestamp'])}'),
+                );
+              },
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Future<Map<String, String>> _fetchUserAndMaterialNames() async {
+    final usersSnap =
+        await FirebaseFirestore.instance.collection('users').get();
+    final materialsSnap =
+        await FirebaseFirestore.instance.collection('materials').get();
+    final Map<String, String> nameMap = {};
+    for (final doc in usersSnap.docs) {
+      nameMap[doc.id] = doc.data()['name'] ?? doc.id;
+    }
+    for (final doc in materialsSnap.docs) {
+      nameMap[doc.id] = doc.data()['name'] ?? doc.id;
+    }
+    return nameMap;
+  }
+
+  String _formatAuditDescription(
+      Map<String, dynamic> event, Map<String, String> nameMap) {
+    final type = event['type'] ?? '';
+    final desc = event['description'] ?? '';
+    if (desc.startsWith('BOM Edit:')) {
+      final details = _parseDetails(desc.replaceFirst('BOM Edit: ', ''));
+      final materialId = details['materialId'] ?? '';
+      final material = nameMap[materialId] ?? materialId;
+      final total = details['totalQuantity'] ?? details['total'] ?? '';
+      final used = details['usedQuantity'] ?? details['used'] ?? '';
+      final threshold = details['threshold'] ?? '';
+      // Check for old and new values for diff
+      final oldTotal = details['oldTotalQuantity'] ?? details['oldTotal'] ?? '';
+      final newTotal = details['newTotalQuantity'] ?? details['newTotal'] ?? '';
+      if (oldTotal != '' && newTotal != '') {
+        final diff =
+            double.tryParse(newTotal) ?? 0 - (double.tryParse(oldTotal) ?? 0);
+        if (diff > 0) {
+          return "+$diff $material added (total now $newTotal, used: $used, threshold: $threshold).";
+        } else if (diff < 0) {
+          return "$material: ${diff.abs()} removed (total now $newTotal, used: $used, threshold: $threshold).";
+        } else {
+          return "$material: No change (total remains $newTotal, used: $used, threshold: $threshold).";
+        }
+      }
+      if (material.isNotEmpty && total != '') {
+        return "Material '$material' total set to $total, used: $used, threshold: $threshold.";
+      }
+      return 'Bill of Materials updated.';
+    } else if (desc.startsWith('Material History:')) {
+      final qty = desc.replaceFirst('Material History: ', '');
+      return 'Material used: $qty.';
+    } else if (desc.startsWith('Material Movement:')) {
+      final qty = desc.replaceFirst('Material Movement: ', '');
+      return 'Material moved: $qty.';
+    } else if (event['changes'] != null && event['changes'] is Map) {
+      // If changes map is present, show diffs for each field
+      final changes = event['changes'] as Map;
+      final List<String> diffs = [];
+      changes.forEach((key, value) {
+        if (value is Map &&
+            value.containsKey('old') &&
+            value.containsKey('new')) {
+          final oldVal = value['old'];
+          final newVal = value['new'];
+          if (oldVal != newVal) {
+            diffs.add("$key changed from $oldVal to $newVal");
+          }
+        }
+      });
+      if (diffs.isNotEmpty) {
+        return diffs.join(", ");
+      }
+    }
+    // fallback
+    return desc;
+  }
+
+  String _formatUser(dynamic userId, Map<String, String> nameMap) {
+    if (userId == null || userId.toString().isEmpty) return 'Unknown';
+    return nameMap[userId.toString()] ?? userId.toString();
+  }
+
+  String _formatTimestamp(dynamic timestamp) {
+    if (timestamp is DateTime) {
+      return '${timestamp.year}-${timestamp.month.toString().padLeft(2, '0')}-${timestamp.day.toString().padLeft(2, '0')} '
+          '${timestamp.hour.toString().padLeft(2, '0')}:${timestamp.minute.toString().padLeft(2, '0')}:${timestamp.second.toString().padLeft(2, '0')}';
+    }
+    return timestamp?.toString() ?? '';
+  }
+
+  Map<String, dynamic> _parseDetails(String detailsStr) {
+    // Very basic parser for {key: value, ...} string
+    final map = <String, dynamic>{};
+    final regex = RegExp(r'(\w+): ([^,}]+)');
+    for (final match in regex.allMatches(detailsStr)) {
+      map[match.group(1)!] = match.group(2)!.trim();
+    }
+    return map;
+  }
+
+  IconData _getAuditIcon(String type) {
+    switch (type) {
+      case 'edit_bom':
+        return Icons.edit;
+      case 'add_material':
+        return Icons.add_circle_outline;
+      case 'remove_material':
+        return Icons.remove_circle_outline;
+      case 'use_material':
+        return Icons.inventory_2;
+      default:
+        return Icons.history;
+    }
   }
 
   Widget _buildBomSummary() {
@@ -68,26 +327,13 @@ class _DisplayBoMWidgetState extends State<DisplayBoMWidget> {
             materials.fold<double>(0, (sum, m) => sum + m.usedQuantity);
         final remaining =
             materials.fold<double>(0, (sum, m) => sum + m.remainingQuantity);
-        final allFinished = materials.every((m) => m.remainingQuantity <= 0);
-        final lowStock =
-            materials.any((m) => m.isLowStock && m.remainingQuantity > 0);
-        String status = allFinished
-            ? 'All Finished'
-            : lowStock
-                ? 'Low Stock'
-                : 'In Progress';
-        Color statusColor = allFinished
-            ? Colors.green
-            : lowStock
-                ? Colors.orange
-                : Colors.blue;
         return Card(
-          color: statusColor.withOpacity(0.08),
+          color: Colors.grey[300],
           margin: const EdgeInsets.only(bottom: 16),
           child: Padding(
             padding: const EdgeInsets.all(16.0),
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              mainAxisAlignment: MainAxisAlignment.start,
               children: [
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -97,11 +343,6 @@ class _DisplayBoMWidgetState extends State<DisplayBoMWidget> {
                     Text('Used: $used'),
                     Text('Remaining: $remaining'),
                   ],
-                ),
-                Chip(
-                  label:
-                      Text(status, style: const TextStyle(color: Colors.white)),
-                  backgroundColor: statusColor,
                 ),
               ],
             ),
@@ -157,22 +398,16 @@ class _DisplayBoMWidgetState extends State<DisplayBoMWidget> {
                   builder: (context, snapshot) {
                     final mat = snapshot.data;
                     final finished = material.remainingQuantity <= 0;
-                    final lowStock = material.isLowStock && !finished;
-                    final statusColor = finished
-                        ? Colors.green
-                        : lowStock
-                            ? Colors.orange
-                            : Colors.blue;
-                    final statusLabel = finished
-                        ? 'Finished'
-                        : lowStock
-                            ? 'Low Stock'
-                            : 'OK';
                     return Card(
-                      elevation: 2,
-                      margin: const EdgeInsets.symmetric(vertical: 8),
+                      elevation: 1,
+                      margin: const EdgeInsets.symmetric(
+                          vertical: 6, horizontal: 0),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
                       child: Padding(
-                        padding: const EdgeInsets.all(16.0),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 10),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -187,7 +422,7 @@ class _DisplayBoMWidgetState extends State<DisplayBoMWidget> {
                                       Text(
                                         mat?.name ?? material.materialId,
                                         style: const TextStyle(
-                                          fontSize: 18,
+                                          fontSize: 16,
                                           fontWeight: FontWeight.bold,
                                         ),
                                       ),
@@ -195,84 +430,78 @@ class _DisplayBoMWidgetState extends State<DisplayBoMWidget> {
                                         Text(
                                           '${mat.category} - ${mat.unit}',
                                           style: const TextStyle(
-                                              color: Colors.grey),
+                                              color: Colors.grey, fontSize: 13),
                                         ),
-                                      const SizedBox(height: 4),
+                                      const SizedBox(height: 2),
                                       Row(
                                         children: [
                                           Text(
-                                              'Total: ${material.totalQuantity}'),
-                                          const SizedBox(width: 12),
+                                              'Total: ${material.totalQuantity}',
+                                              style: const TextStyle(
+                                                  fontSize: 13)),
+                                          const SizedBox(width: 10),
+                                          Text('Used: ${material.usedQuantity}',
+                                              style: const TextStyle(
+                                                  fontSize: 13)),
+                                          const SizedBox(width: 10),
                                           Text(
-                                              'Used: ${material.usedQuantity}'),
-                                          const SizedBox(width: 12),
-                                          Text(
-                                              'Remaining: ${material.remainingQuantity}'),
+                                              'Remaining: ${material.remainingQuantity}',
+                                              style: const TextStyle(
+                                                  fontSize: 13)),
                                         ],
                                       ),
                                     ],
                                   ),
                                 ),
-                                Chip(
-                                  label: Text(statusLabel,
-                                      style:
-                                          const TextStyle(color: Colors.white)),
-                                  backgroundColor: statusColor,
-                                ),
                               ],
                             ),
                             const SizedBox(height: 8),
-                            LinearProgressIndicator(
-                              value: material.totalQuantity == 0
-                                  ? 0
-                                  : (material.usedQuantity /
-                                          material.totalQuantity)
-                                      .clamp(0, 1),
-                              minHeight: 8,
-                              backgroundColor: Colors.grey[200],
-                              valueColor:
-                                  AlwaysStoppedAnimation<Color>(statusColor),
-                            ),
-                            const SizedBox(height: 8),
                             Row(
-                              mainAxisAlignment: MainAxisAlignment.end,
+                              crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
-                                TextButton.icon(
-                                  onPressed: finished
-                                      ? null
-                                      : () => _showRequestDialog(material),
-                                  icon: const Icon(Icons.add_shopping_cart),
-                                  label: const Text('Request More'),
+                                Expanded(
+                                  child: LinearProgressIndicator(
+                                    value: material.totalQuantity == 0
+                                        ? 0
+                                        : (material.usedQuantity /
+                                                material.totalQuantity)
+                                            .clamp(0, 1),
+                                    minHeight: 8,
+                                    backgroundColor: Colors.grey[200],
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                        Colors.blue),
+                                  ),
                                 ),
-                                const SizedBox(width: 8),
+                                const SizedBox(width: 12),
                                 TextButton.icon(
                                   onPressed: finished
                                       ? null
                                       : () => _showAdjustDialog(material),
-                                  icon: const Icon(Icons.edit),
-                                  label: const Text('Adjust'),
+                                  icon: const Icon(Icons.edit, size: 18),
+                                  label: const Text('Adjust',
+                                      style: TextStyle(fontSize: 14)),
+                                  style: TextButton.styleFrom(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 8, vertical: 0),
+                                    minimumSize: const Size(0, 36),
+                                  ),
                                 ),
-                                const SizedBox(width: 8),
+                                const SizedBox(width: 4),
                                 TextButton.icon(
                                   onPressed: () {
-                                    setState(() {
-                                      _showAuditTrail[material.materialId] =
-                                          !(_showAuditTrail[
-                                                  material.materialId] ??
-                                              false);
-                                    });
+                                    _showAuditTrailDialog(material);
                                   },
-                                  icon: Icon(
-                                      _showAuditTrail[material.materialId] ==
-                                              true
-                                          ? Icons.expand_less
-                                          : Icons.expand_more),
-                                  label: const Text('Audit Trail'),
+                                  icon: const Icon(Icons.history, size: 18),
+                                  label: const Text('Audit Trail',
+                                      style: TextStyle(fontSize: 14)),
+                                  style: TextButton.styleFrom(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 8, vertical: 0),
+                                    minimumSize: const Size(0, 36),
+                                  ),
                                 ),
                               ],
                             ),
-                            if (_showAuditTrail[material.materialId] == true)
-                              _buildAuditTrail(material),
                           ],
                         ),
                       ),
@@ -284,6 +513,25 @@ class _DisplayBoMWidgetState extends State<DisplayBoMWidget> {
           ],
         );
       },
+    );
+  }
+
+  Future<void> _showAuditTrailDialog(ProjectBoMModel material) async {
+    await showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Adjustment History'),
+        content: SizedBox(
+          width: 400,
+          child: _buildAuditTrail(material),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
     );
   }
 
@@ -340,79 +588,6 @@ class _DisplayBoMWidgetState extends State<DisplayBoMWidget> {
                   )),
             ],
           ),
-        );
-      },
-    );
-  }
-
-  Widget _buildMaterialRequests() {
-    return StreamBuilder<List<RequestModel>>(
-      stream: _bomService.getProjectRequests(widget.projectId),
-      builder: (context, snapshot) {
-        if (snapshot.hasError) {
-          return Center(
-            child: Text(
-              'Error loading requests: ${snapshot.error}',
-              style: const TextStyle(color: Colors.red),
-            ),
-          );
-        }
-
-        if (!snapshot.hasData) {
-          return const Center(child: CircularProgressIndicator());
-        }
-
-        final requests = snapshot.data!;
-
-        if (requests.isEmpty) {
-          return const SizedBox.shrink();
-        }
-
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Material Requests',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 8),
-            ListView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: requests.length,
-              itemBuilder: (context, index) {
-                final request = requests[index];
-                return Card(
-                  child: ListTile(
-                    title: Text(request.materialName),
-                    subtitle: Text(
-                      'Quantity: ${request.quantity} ${request.unit}\nReason: ${request.reason}',
-                    ),
-                    trailing: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: _getStatusColor(request.status).withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Text(
-                        request.status.toUpperCase(),
-                        style: TextStyle(
-                          color: _getStatusColor(request.status),
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
-                );
-              },
-            ),
-          ],
         );
       },
     );

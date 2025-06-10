@@ -43,10 +43,9 @@ class _MaterialFormState extends State<MaterialForm> {
     );
     _unitController = TextEditingController(text: widget.material?.unit);
     _costController = TextEditingController(
-      text:
-          widget.material?.cost != null
-              ? CurrencyFormatter.formatWithoutSymbol(widget.material!.cost)
-              : '',
+      text: widget.material?.cost != null
+          ? CurrencyFormatter.formatWithoutSymbol(widget.material!.cost)
+          : '',
     );
     _supplierController = TextEditingController(
       text: widget.material?.supplier,
@@ -288,13 +287,12 @@ class _MaterialFormState extends State<MaterialForm> {
             height: AppSpacing.minButtonHeight,
             child: ElevatedButton(
               onPressed: (widget.isLoading || _isDeleting) ? null : _submitForm,
-              child:
-                  widget.isLoading || _isDeleting
-                      ? const CircularProgressIndicator()
-                      : Text(
-                        isEditing ? 'Update Material' : 'Add Material',
-                        style: AppTextStyles.button,
-                      ),
+              child: widget.isLoading || _isDeleting
+                  ? const CircularProgressIndicator()
+                  : Text(
+                      isEditing ? 'Update Material' : 'Add Material',
+                      style: AppTextStyles.button,
+                    ),
             ),
           ),
         ],

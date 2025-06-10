@@ -69,10 +69,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   key: _formKey,
                   child: ConstrainedBox(
                     constraints: BoxConstraints(
-                      maxWidth:
-                          isDesktop
-                              ? 450
-                              : isTablet
+                      maxWidth: isDesktop
+                          ? 450
+                          : isTablet
                               ? 400
                               : double.infinity,
                     ),

@@ -79,27 +79,24 @@ class _AdminBoMScreenState extends State<AdminBoMScreen> {
 
   Widget _buildMaterialGrid(List<MaterialModel> materials) {
     // Apply filters
-    var filteredMaterials =
-        materials.where((material) {
-          if (_selectedCategory != null &&
-              material.category != _selectedCategory) {
-            return false;
-          }
-          if (_searchQuery.isNotEmpty) {
-            final query = _searchQuery.toLowerCase();
-            return material.name.toLowerCase().contains(query) ||
-                material.category.toLowerCase().contains(query) ||
-                material.supplier.toLowerCase().contains(query);
-          }
-          return true;
-        }).toList();
+    var filteredMaterials = materials.where((material) {
+      if (_selectedCategory != null && material.category != _selectedCategory) {
+        return false;
+      }
+      if (_searchQuery.isNotEmpty) {
+        final query = _searchQuery.toLowerCase();
+        return material.name.toLowerCase().contains(query) ||
+            material.category.toLowerCase().contains(query) ||
+            material.supplier.toLowerCase().contains(query);
+      }
+      return true;
+    }).toList();
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final crossAxisCount =
-            constraints.maxWidth > 1200
-                ? 3
-                : constraints.maxWidth > 800
+        final crossAxisCount = constraints.maxWidth > 1200
+            ? 3
+            : constraints.maxWidth > 800
                 ? 2
                 : 1;
 
@@ -131,10 +128,9 @@ class _AdminBoMScreenState extends State<AdminBoMScreen> {
     return Scaffold(
       body: LayoutBuilder(
         builder: (context, constraints) {
-          final padding =
-              constraints.maxWidth > 600
-                  ? AppSpacing.tabletPadding
-                  : AppSpacing.mobilePadding;
+          final padding = constraints.maxWidth > 600
+              ? AppSpacing.tabletPadding
+              : AppSpacing.mobilePadding;
 
           return Padding(
             padding: padding,
@@ -235,14 +231,12 @@ class _AdminBoMScreenState extends State<AdminBoMScreen> {
                           children: [
                             SearchFilterBar(
                               searchQuery: _searchQuery,
-                              onSearchChanged:
-                                  (value) =>
-                                      setState(() => _searchQuery = value),
+                              onSearchChanged: (value) =>
+                                  setState(() => _searchQuery = value),
                               selectedCategory: _selectedCategory,
                               categories: categories,
-                              onCategoryChanged:
-                                  (value) =>
-                                      setState(() => _selectedCategory = value),
+                              onCategoryChanged: (value) =>
+                                  setState(() => _selectedCategory = value),
                             ),
                             SizedBox(height: AppSpacing.md),
                             Expanded(

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../models/user_model.dart';
 import '../services/user_service.dart';
+import '../services/project_service.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class AddUserDialog extends StatefulWidget {
   final Function(UserModel) onUserAdded;
@@ -19,6 +21,7 @@ class _AddUserDialogState extends State<AddUserDialog> {
   final _formKey = GlobalKey<FormState>();
   final _userService = UserService();
   final _imagePicker = ImagePicker();
+  final _projectService = ProjectService();
 
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
@@ -32,7 +35,26 @@ class _AddUserDialogState extends State<AddUserDialog> {
   bool _obscurePassword = true;
 
   // Empty projects list - will be populated from backend later
-  final List<String> _availableProjects = [];
+  List<Map<String, dynamic>> _projects = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchProjects();
+  }
+
+  Future<void> _fetchProjects() async {
+    // Fetch all active projects from Firestore
+    final snapshot = await FirebaseFirestore.instance
+        .collection('projects')
+        .where('status', isEqualTo: 'Active')
+        .get();
+    setState(() {
+      _projects = snapshot.docs
+          .map((doc) => {'id': doc.id, 'name': doc['name'] ?? ''})
+          .toList();
+    });
+  }
 
   Future<void> _pickImage() async {
     final XFile? image =
@@ -79,6 +101,12 @@ class _AddUserDialogState extends State<AddUserDialog> {
           assignedProjects: _selectedRole == 'admin' ? [] : _selectedProjects,
         );
 
+        if (user != null && _selectedRole != 'admin') {
+          // Assign user to selected projects in Firestore
+          for (final projectId in _selectedProjects) {
+            await _projectService.addManagerToProject(projectId, user.id);
+          }
+        }
         if (user != null) {
           widget.onUserAdded(user);
           Navigator.of(context).pop();
@@ -303,21 +331,18 @@ class _AddUserDialogState extends State<AddUserDialog> {
                       ),
                     ),
                     const SizedBox(height: 8),
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade100,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: const Center(
-                        child: Text(
-                          'No projects available',
-                          style: TextStyle(
-                            color: Colors.grey,
-                            fontSize: 14,
-                          ),
-                        ),
-                      ),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: _projects.map((project) {
+                        final isSelected =
+                            _selectedProjects.contains(project['id']);
+                        return FilterChip(
+                          label: Text(project['name'] ?? ''),
+                          selected: isSelected,
+                          onSelected: (_) => _toggleProject(project['id']!),
+                        );
+                      }).toList(),
                     ),
                   ],
                   const SizedBox(height: 24),
