@@ -43,8 +43,11 @@ class MyApp extends StatelessWidget {
             routes: {
               '/login': (context) => const LoginScreen(),
               '/main': (context) => const MainScreen(),
-              '/admin/project-details': (context) =>
-                  const ProjectDetailsScreen(),
+              '/admin/project-details': (context) {
+                // Get the project from route arguments
+                final project = ModalRoute.of(context)?.settings.arguments;
+                return const ProjectDetailsScreen();
+              },
             },
             debugShowCheckedModeBanner: false,
           );
@@ -65,8 +68,12 @@ class _AuthWrapperState extends State<AuthWrapper> {
   @override
   void initState() {
     super.initState();
-    // Check if user is authenticated
-    Provider.of<UserProvider>(context, listen: false).initializeUser();
+    // Use Future.microtask to avoid setState during build
+    Future.microtask(() {
+      if (mounted) {
+        Provider.of<UserProvider>(context, listen: false).initializeUser();
+      }
+    });
   }
 
   @override

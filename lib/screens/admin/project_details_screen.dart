@@ -24,8 +24,9 @@ class ProjectDetailsScreen extends StatefulWidget {
 }
 
 class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> {
-  late Project project;
+  Project? project;
   bool _isLoading = false;
+  bool _hasLoadedData = false; // Flag to prevent multiple loads
   List<String> _projectManagerNames = [];
   List<ActivityItem> _activities = [];
   final UserService _userService = UserService();
@@ -35,21 +36,62 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> {
   @override
   void initState() {
     super.initState();
-    _loadData();
+    // Note: Don't load data here because project isn't available yet
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    // Get project from route arguments safely
+    if (project == null) {
+      final arguments = ModalRoute.of(context)?.settings.arguments;
+      if (arguments != null && arguments is Project) {
+        project = arguments;
+
+        // Load data only once and only after project is available
+        if (!_hasLoadedData) {
+          _hasLoadedData = true;
+          _loadData();
+        }
+      } else {
+        // Handle case where no valid project is passed
+        print('Warning: No valid Project passed to ProjectDetailsScreen');
+      }
+    }
   }
 
   Future<void> _loadData() async {
+    if (project == null) return; // Safety check
+
     setState(() => _isLoading = true);
+
+    // Load project manager names separately with its own error handling
     try {
+      // Debug: Print project manager IDs
+      print('Project: ${project!.name}');
+      print('Project Manager IDs: ${project!.projectManagerIds}');
+      print('Number of manager IDs: ${project!.projectManagerIds.length}');
+
       // Load project manager names
       final managerNames =
-          await _userService.getUserNamesByIds(project.projectManagerIds);
+          await _userService.getUserNamesByIds(project!.projectManagerIds);
+      print('Loaded manager names: $managerNames');
       setState(() => _projectManagerNames = managerNames);
+    } catch (e) {
+      print('Error loading project manager names: $e');
+      if (mounted) {
+        setState(() {
+          _projectManagerNames = ['Error: Failed to load manager names'];
+        });
+      }
+    }
 
-      // Load recent activities
+    // Load recent activities separately with its own error handling
+    try {
       final activitiesSnapshot = await _firestore
           .collection('project_activities')
-          .where('projectId', isEqualTo: project.id)
+          .where('projectId', isEqualTo: project!.id)
           .orderBy('timestamp', descending: true)
           .limit(5)
           .get();
@@ -67,17 +109,17 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> {
 
       setState(() => _activities = activities);
     } catch (e) {
+      print(
+          'Error loading project activities (likely missing Firestore index): $e');
+      // Don't override project manager names - just set empty activities
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error loading project data: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        setState(() {
+          _activities = [];
+        });
       }
-    } finally {
-      setState(() => _isLoading = false);
     }
+
+    setState(() => _isLoading = false);
   }
 
   String _formatTimestamp(Timestamp timestamp) {
@@ -128,11 +170,34 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    project = ModalRoute.of(context)!.settings.arguments as Project;
+    // Project is now assigned in didChangeDependencies(), so we can safely use it
+    if (project == null) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Project Details')),
+        body: const Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.error_outline, size: 64, color: Colors.grey),
+              SizedBox(height: 16),
+              Text(
+                'No project data available',
+                style: TextStyle(fontSize: 18, color: Colors.grey),
+              ),
+              SizedBox(height: 8),
+              Text(
+                'Please navigate back and try again',
+                style: TextStyle(fontSize: 14, color: Colors.grey),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(project.name),
+        title: Text(project!.name),
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -202,7 +267,7 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> {
                 children: [
                   Flexible(
                     child: Text(
-                      project.name,
+                      project!.name,
                       style:
                           Theme.of(context).textTheme.headlineMedium?.copyWith(
                                 fontWeight: FontWeight.bold,
@@ -211,12 +276,12 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> {
                     ),
                   ),
                   const SizedBox(width: 12),
-                  _buildStatusChip(project.status),
+                  _buildStatusChip(project!.status),
                 ],
               ),
               const SizedBox(height: 8),
               Text(
-                project.location,
+                project!.location,
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       color: Colors.grey[600],
                     ),
@@ -302,16 +367,20 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildInfoRow('Project Name', project.name),
-          _buildInfoRow('Location', project.location),
-          _buildInfoRow('Description', project.description),
+          _buildInfoRow('Project Name', project!.name),
+          _buildInfoRow('Location', project!.location),
+          _buildInfoRow('Description', project!.description),
           _buildInfoRow(
-              'Start Date', project.startDate.toString().split(' ')[0]),
-          _buildInfoRow('End Date', project.endDate.toString().split(' ')[0]),
-          _buildInfoRow('Status', project.status),
+              'Start Date', project!.startDate.toString().split(' ')[0]),
+          _buildInfoRow('End Date', project!.endDate.toString().split(' ')[0]),
+          _buildInfoRow('Status', project!.status),
           _buildInfoRow(
             'Project Managers',
-            _projectManagerNames.join(', '),
+            _projectManagerNames.isEmpty
+                ? 'Loading...'
+                : _projectManagerNames.any((name) => name.startsWith('Error:'))
+                    ? 'Unable to load manager names'
+                    : _projectManagerNames.join(', '),
           ),
         ],
       ),
@@ -337,7 +406,7 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> {
 
   Widget _buildBillOfMaterialsButton() {
     return StreamBuilder<List<ProjectBoMModel>>(
-      stream: _bomService.getProjectMaterials(project.id),
+      stream: _bomService.getProjectMaterials(project!.id),
       builder: (context, snapshot) {
         if (snapshot.hasError) {
           return const SizedBox.shrink();
@@ -416,7 +485,7 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> {
               )
             else
               DisplayBoMWidget(
-                projectId: project.id,
+                projectId: project!.id,
                 onBomUpdated: () {
                   setState(() {});
                 },
@@ -431,7 +500,7 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> {
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => CreateBomScreen(project: project),
+        builder: (context) => CreateBomScreen(project: project!),
       ),
     );
 
