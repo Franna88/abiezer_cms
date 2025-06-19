@@ -1,444 +1,395 @@
-# Abiezer Construction Management System
+# 🏗️ Abiezer Construction Management System (CMS)
 
-A Flutter-based Construction Management System that helps manage construction projects, materials, and team collaboration.
+[![Flutter](https://img.shields.io/badge/Flutter-3.0+-blue.svg)](https://flutter.dev/)
+[![Dart](https://img.shields.io/badge/Dart-3.0+-blue.svg)](https://dart.dev/)
+[![Firebase](https://img.shields.io/badge/Firebase-Latest-orange.svg)](https://firebase.google.com/)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-## Features
+A modern, Flutter-based Construction Management System designed to streamline construction project management, materials tracking, and team collaboration. Built with Firebase backend for real-time data synchronization and cross-platform support.
 
-- 🔐 Secure Authentication System
-- 📱 Cross-platform Support (iOS, Android, Web)
-- 🏗️ Project Management
-- 📊 Bill of Materials (BOM) Management
-- 🔔 Real-time Notifications
-- 📸 Image Upload and Management
-- 🔄 Offline Support
-- 📈 Analytics Integration
+## 📋 Table of Contents
 
-## Getting Started
-
-### Prerequisites
-
-- Flutter SDK (>=3.0.0)
-- Dart SDK (>=3.0.0)
-- Firebase Account
-- Android Studio / Xcode (for mobile development)
-
-### Installation
-
-1. Clone the repository:
-```bash
-git clone [your-repository-url]
-cd abiezer_cms
-```
-
-2. Install dependencies:
-```bash
-flutter pub get
-```
-
-3. Configure Firebase:
-   - Create a new Firebase project
-   - Add your Firebase configuration files:
-     - For Android: `android/app/google-services.json`
-     - For iOS: `ios/Runner/GoogleService-Info.plist`
-     - For Web: Add the Firebase configuration to `web/index.html`
-
-4. Run the application:
-```bash
-flutter run
-```
-
-## Project Structure
-
-```
-lib/
-├── config/         # Configuration files
-├── providers/      # State management providers
-├── screens/        # UI screens
-├── widgets/        # Reusable widgets (e.g. ProjectCard)
-├── utils/          # Utility functions and constants
-└── main.dart       # Application entry point
-```
-
-## Dependencies
-
-- **Firebase**
-  - firebase_core: ^2.24.2
-  - firebase_auth: ^4.16.0
-  - cloud_firestore: ^4.14.0
-  - firebase_storage: ^11.6.0
-  - firebase_analytics: ^10.8.6
-
-- **State Management**
-  - provider: ^6.1.1
-
-- **UI Components**
-  - flutter_spinkit: ^5.2.0
-  - cached_network_image: ^3.3.1
-  - flutter_svg: ^2.0.9
-
-- **Utilities**
-  - intl: ^0.19.0
-  - connectivity_plus: ^6.1.4
-  - shared_preferences: ^2.5.3
-  - path_provider: ^2.1.5
-  - uuid: ^4.5.1
-  - rxdart: ^0.28.0
-
-## Development
-
-### Code Style
-
-This project follows the Flutter style guide and uses the `flutter_lints` package for code quality. Run the following command to check for lint issues:
-
-```bash
-flutter analyze
-```
-
-### Testing
-
-Run the tests using:
-
-```bash
-flutter test
-```
-
-## Deployment
-
-### Android
-
-1. Update the version in `pubspec.yaml`
-2. Run:
-```bash
-flutter build apk --release
-```
-
-### iOS
-
-1. Update the version in `pubspec.yaml`
-2. Run:
-```bash
-flutter build ios --release
-```
-
-### Web
-
-1. Update the version in `pubspec.yaml`
-2. Run:
-```bash
-flutter build web --release
-```
-
-## Project Manager BOM Tab (New)
-
-### Overview
-The Project Manager's Bill of Materials (BOM) tab has been redesigned for a modern, responsive, and user-friendly experience. It now features:
-
-- **Responsive Project Card Grid:**
-  - Projects are displayed as cards in a grid (1 column on mobile, 3 on desktop/tablet).
-  - Each card shows project name, status chip, location, date range, description, and manager(s) in italics.
-- **Assigned vs. All Projects:**
-  - Two main sections: "Projects Assigned to Me" and "All Projects" (toggle between them).
-  - If the user is not assigned to a project, a lock icon with a tooltip appears and the "View BOM" button is disabled/hidden.
-  - If the user is assigned, the "View BOM" button is enabled.
-- **No Projects State:**
-  - If no projects are assigned, a clear empty state is shown.
-- **Reusable Components:**
-  - The `ProjectCard` widget is used for consistent, maintainable UI.
-
-### Example Card UI
-```
-+-------------------------------+
-| Project A         [Active]    |
-| 📍 2nd Avenue                |
-| 📅 2025-06-30 - 2025-09-30   |
-| 📝 this is a home...         |
-| 👤 Sarah Brown (italic)      |
-|                [View BOM]    |
-+-------------------------------+
-```
-If not assigned:
-```
-+-------------------------------+
-| Project B         [Active] 🔒 |
-| ...                           |
-|        (View BOM disabled)    |
-+-------------------------------+
-```
-
-### Navigation
-- Only assigned projects allow navigation to BOM details.
-- All projects are visible for reference, but unassigned projects are locked.
-
-## Contributing
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## Support
-
-For support, email [your-email] or create an issue in the repository.
+- [🌟 Features](#-features)
+- [🚀 Quick Start](#-quick-start)
+- [📱 Screenshots](#-screenshots)
+- [🏗️ Architecture](#️-architecture)
+- [📁 Project Structure](#-project-structure)
+- [🔧 Setup & Installation](#-setup--installation)
+- [🔥 Firebase Configuration](#-firebase-configuration)
+- [📦 Dependencies](#-dependencies)
+- [🧪 Testing](#-testing)
+- [📱 Deployment](#-deployment)
+- [🤝 Contributing](#-contributing)
+- [📄 License](#-license)
 
 ## 🌟 Features
 
-### Authentication & User Management
-- 🔐 Secure Authentication System with Firebase Auth
-- 👥 Role-based Access Control (Admin, Project Manager, User)
-- 👤 User Profile Management
-- 🔒 Secure Password Management
-- 📱 Multi-device Login Support
+### 🔐 Authentication & Security
+- **Firebase Authentication** - Secure user login and registration
+- **Role-based Access Control** - Admin, Project Manager, and User roles
+- **Multi-device Support** - Seamless login across devices
+- **Secure Password Management** - Industry-standard security practices
 
-### Project Management
-- 📋 Project Creation and Management
-- 📊 Project Dashboard with Key Metrics
-- 📝 Project Documentation
-- 📅 Project Timeline Management
-- 📍 Location-based Project Tracking
-- 💰 Budget Management
-- 📈 Progress Tracking
-- 🏷️ Project Status Updates
+### 📊 Project Management
+- **Project Dashboard** - Real-time project metrics and overview
+- **Project Creation & Management** - Complete project lifecycle management
+- **Timeline Tracking** - Milestone and deadline management
+- **Team Assignment** - Assign and manage project teams
+- **Document Management** - Store and organize project documents
 
-### Bill of Materials (BOM)
-- 📋 BOM Creation and Management
-- 📊 Material Cost Tracking
-- 📦 Inventory Management
-- 🔄 Material Usage Tracking
-- 📝 Material Specifications
-- 💰 Cost Estimation
-- 🆕 **Recent UI/UX Improvements**
-  - Material list is now compact, modern, and visually appealing
-  - Adjust and Audit Trail buttons are inline with the progress bar for each material
-  - Audit Trail opens in a modal dialog for better usability
-  - 'Request More' button is hidden for admin users
-  - Material Requests section removed from the Bill of Materials view for projects
-- 🕵️ **Audit Trail for BOM**
-  - View a complete history of all changes and adjustments
-  - See who made each change, when, and what was changed
-  - Access the Audit Trail via a button next to 'Edit Bill of Materials'
-  - Combines BOM edits, material usage, and movement logs in a single view
+### 📋 Bill of Materials (BOM)
+- **Material List Management** - Comprehensive material tracking
+- **Cost Estimation** - Real-time cost calculations and tracking
+- **Inventory Management** - Stock level monitoring and alerts
+- **Cost Analysis** - Detailed cost breakdown and reporting
+- **Real-time Updates** - Live synchronization across all devices
 
-### Purchasing Management
-- 🛒 Purchase Order Creation
-- 📋 Vendor Management
-- 💰 Cost Tracking
-- 📊 Purchase History
-- 📈 Budget vs. Actual Analysis
-- 📝 Purchase Documentation
+### 💬 Communication & Collaboration
+- **Real-time Chat** - Instant messaging between team members
+- **In-app Notifications** - Push notifications for important updates
+- **Image Sharing** - Photo documentation and sharing
+- **Team Collaboration** - Enhanced team coordination tools
 
-### Productivity Tracking
-- ⏱️ Time Tracking
-- 👥 Team Performance Metrics
-- 📊 Productivity Reports
-- 📈 Efficiency Analysis
-- 📝 Daily Progress Reports
+### 📱 Cross-Platform Support
+- **iOS & Android** - Native mobile applications
+- **Web Support** - Progressive Web App (PWA)
+- **Offline Capability** - Work without internet connection
+- **Responsive Design** - Optimized for all screen sizes
 
-### Reporting System
-- 📊 Custom Report Generation
-- 📈 Data Visualization
-- 📑 Export Reports (PDF, Excel)
-- 📊 Financial Reports
-- 📈 Project Performance Reports
-- 📊 Resource Utilization Reports
+## 🚀 Quick Start
 
-## 🛠️ Technical Stack
+### Prerequisites
 
-### Core Technologies
-- Flutter (>=3.0.0)
-- Dart (>=3.0.0)
-- Firebase Services
-  - Authentication
-  - Cloud Firestore
-  - Storage
-  - Analytics
+- **Flutter SDK** (>=3.0.0)
+- **Dart SDK** (>=3.0.0)
+- **Firebase Account** - For backend services
+- **Android Studio / Xcode** - For mobile development
+- **Python 3.x** - For Firebase data management scripts
 
-### Key Dependencies
-- `firebase_core: ^2.24.2`
-- `firebase_auth: ^4.16.0`
-- `cloud_firestore: ^4.14.0`
-- `firebase_storage: ^11.6.0`
-- `firebase_analytics: ^10.8.6`
-- `provider: ^6.1.1` (State Management)
-- `image_picker: ^1.1.2`
-- `flutter_spinkit: ^5.2.0`
-- `intl: ^0.19.0`
-- `cached_network_image: ^3.3.1`
-- `flutter_svg: ^2.0.9`
-- `connectivity_plus: ^6.1.4`
-- `shared_preferences: ^2.5.3`
-- `path_provider: ^2.1.5`
-- `uuid: ^4.5.1`
-- `rxdart: ^0.28.0`
+### Installation
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/your-username/abiezer_cms.git
+   cd abiezer_cms
+   ```
+
+2. **Install Flutter dependencies**
+   ```bash
+   flutter pub get
+   ```
+
+3. **Install Python dependencies**
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+4. **Configure Firebase** (see [Firebase Configuration](#-firebase-configuration))
+
+5. **Run the application**
+   ```bash
+   flutter run
+   ```
+
+## 📱 Screenshots
+
+*Screenshots will be added here showing the main features of the application*
+
+## 🏗️ Architecture
+
+The application follows a clean architecture pattern with the following layers:
+
+- **Presentation Layer** - UI screens and widgets
+- **Business Logic Layer** - Providers and state management
+- **Data Layer** - Services and models
+- **Infrastructure Layer** - Firebase integration and utilities
+
+### State Management
+- **Provider Pattern** - For state management across the app
+- **Firebase Real-time Updates** - Live data synchronization
+- **Local Storage** - Offline data persistence
 
 ## 📁 Project Structure
 
 ```
-lib/
-├── main.dart
-├── config/
-├── models/
-├── screens/
-├── services/
-├── utils/
-└── widgets/
-
-assets/
-├── images/
-└── icons/
-
-test/
-└── unit/
+abiezer_cms/
+├── lib/                          # Flutter application code
+│   ├── config/                   # Configuration files
+│   │   └── firebase_options.dart # Firebase configuration
+│   ├── core/                     # Core functionality
+│   │   ├── constants/            # App constants
+│   │   ├── theme/                # App theming
+│   │   └── utils/                # Utility functions
+│   ├── features/                 # Feature-specific modules
+│   │   ├── auth/                 # Authentication feature
+│   │   ├── projects/             # Project management
+│   │   ├── bom/                  # Bill of materials
+│   │   └── chat/                 # Communication
+│   ├── models/                   # Data models
+│   ├── providers/                # State management providers
+│   ├── screens/                  # UI screens
+│   │   ├── auth/                 # Authentication screens
+│   │   ├── main/                 # Main app screens
+│   │   ├── admin/                # Admin-specific screens
+│   │   └── project_manager/      # PM-specific screens
+│   ├── services/                 # Service layer
+│   │   ├── firebase/             # Firebase services
+│   │   ├── api/                  # API services
+│   │   └── storage/              # Local storage
+│   ├── utils/                    # Utility functions
+│   ├── widgets/                  # Reusable widgets
+│   └── main.dart                 # Application entry point
+├── docs/                         # Documentation
+│   ├── admin/                    # Admin documentation
+│   ├── project_manager/          # PM documentation
+│   └── PHASES_README.md          # Development phases
+├── firebase_reader.py            # Firebase data export script
+├── create_indexes.py             # Firebase index creation script
+├── pubspec.yaml                  # Flutter dependencies
+├── requirements.txt              # Python dependencies
+└── README.md                     # This file
 ```
 
-## 🔧 Development
+## 🔧 Setup & Installation
 
-### Code Style
-- Follow the Flutter style guide
-- Use the provided `analysis_options.yaml` for linting
-- Run `flutter analyze` before committing changes
+### 1. Flutter Environment Setup
 
-### Testing
-- Write unit tests for critical functionality
-- Run tests using `flutter test`
-- Ensure all tests pass before submitting PRs
+Ensure you have Flutter installed and configured:
 
-### Building for Production
-1. Update version in `pubspec.yaml`
-2. Run `flutter build apk` for Android
-3. Run `flutter build ios` for iOS
-4. Run `flutter build web` for web deployment
+```bash
+flutter doctor
+```
 
-## 📱 Platform Support
-- Android
-- iOS
-- Web
-- macOS
-- Windows
-- Linux
+### 2. Firebase Project Setup
 
-## 🔐 Security
-- All sensitive data is encrypted
-- Firebase Security Rules implemented
-- Regular security audits
-- Secure authentication flow
-- Role-based access control
+1. Create a new Firebase project at [Firebase Console](https://console.firebase.google.com/)
+2. Enable the following services:
+   - Authentication
+   - Firestore Database
+   - Storage
+   - Analytics
+
+### 3. Firebase Configuration
+
+Download and add your Firebase configuration files:
+
+- **Android**: `android/app/google-services.json`
+- **iOS**: `ios/Runner/GoogleService-Info.plist`
+- **Web**: Add configuration to `web/index.html`
+
+### 4. Service Account Setup
+
+For Python scripts, download your Firebase service account key:
+1. Go to Firebase Console → Project Settings → Service Accounts
+2. Generate new private key
+3. Save the JSON file securely
+
+## 🔥 Firebase Configuration
+
+### Firebase Reader Script
+
+The `firebase_reader.py` script provides comprehensive data export functionality:
+
+```bash
+# Export all collections
+python firebase_reader.py --creds path/to/serviceAccountKey.json
+
+# Export specific collection
+python firebase_reader.py --creds path/to/serviceAccountKey.json --collection users
+
+# Export with filters
+python firebase_reader.py --creds path/to/serviceAccountKey.json --collection movements --project-id project123
+
+# Export with limit
+python firebase_reader.py --creds path/to/serviceAccountKey.json --collection projects --limit 10
+```
+
+### Index Creation Script
+
+The `create_indexes.py` script creates optimized Firestore indexes:
+
+```bash
+python create_indexes.py --creds path/to/serviceAccountKey.json
+```
+
+**Created Indexes:**
+- `movements` collection: `projectId`, `materialId`, `performedBy`
+- `billOfMaterials` collection: `status`, `projectId`
+- `projects` collection: `status`, `managerId`
+- `users` collection: `role`, `email`
+
+## 📦 Dependencies
+
+### Flutter Dependencies
+
+#### Core Firebase
+```yaml
+firebase_core: ^2.24.2      # Firebase core functionality
+firebase_auth: ^4.16.0      # Authentication
+cloud_firestore: ^4.14.0    # Database
+firebase_storage: ^11.6.0   # File storage
+firebase_analytics: ^10.8.6 # Analytics
+```
+
+#### State Management
+```yaml
+provider: ^6.1.1            # State management
+```
+
+#### UI & UX
+```yaml
+flutter_spinkit: ^5.2.0     # Loading animations
+cached_network_image: ^3.3.1 # Image caching
+flutter_svg: ^2.0.9         # SVG support
+cupertino_icons: ^1.0.2     # iOS-style icons
+```
+
+#### Utilities
+```yaml
+image_picker: ^1.1.2        # Image selection
+intl: ^0.19.0               # Internationalization
+connectivity_plus: ^6.1.4   # Network connectivity
+shared_preferences: ^2.5.3  # Local storage
+path_provider: ^2.1.5       # File system access
+uuid: ^4.5.1                # Unique identifiers
+path: ^1.8.3                # Path manipulation
+rxdart: ^0.28.0             # Reactive programming
+flutter_image_compress: ^2.1.0 # Image compression
+```
+
+### Python Dependencies
+```txt
+firebase-admin>=6.2.0       # Firebase Admin SDK
+```
+
+## 🧪 Testing
+
+### Run Tests
+```bash
+# Run all tests
+flutter test
+
+# Run tests with coverage
+flutter test --coverage
+
+# Run specific test file
+flutter test test/widget_test.dart
+```
+
+### Code Analysis
+```bash
+# Analyze code for issues
+flutter analyze
+
+# Format code
+flutter format .
+
+# Check for outdated dependencies
+flutter pub outdated
+```
+
+## 📱 Deployment
+
+### Android Deployment
+
+1. **Update version in `pubspec.yaml`**
+2. **Build release APK**
+   ```bash
+   flutter build apk --release
+   ```
+3. **Build app bundle for Play Store**
+   ```bash
+   flutter build appbundle --release
+   ```
+
+### iOS Deployment
+
+1. **Update version in `pubspec.yaml`**
+2. **Build for iOS**
+   ```bash
+   flutter build ios --release
+   ```
+3. **Archive in Xcode for App Store**
+
+### Web Deployment
+
+1. **Build for web**
+   ```bash
+   flutter build web --release
+   ```
+2. **Deploy to Firebase Hosting**
+   ```bash
+   firebase deploy --only hosting
+   ```
 
 ## 🤝 Contributing
-1. Fork the repository
-2. Create your feature branch
-3. Commit your changes
-4. Push to the branch
-5. Create a Pull Request
+
+We welcome contributions! Please follow these steps:
+
+1. **Fork the repository**
+2. **Create a feature branch**
+   ```bash
+   git checkout -b feature/amazing-feature
+   ```
+3. **Make your changes**
+4. **Run tests and analysis**
+   ```bash
+   flutter test
+   flutter analyze
+   ```
+5. **Commit your changes**
+   ```bash
+   git commit -m 'Add amazing feature'
+   ```
+6. **Push to your branch**
+   ```bash
+   git push origin feature/amazing-feature
+   ```
+7. **Open a Pull Request**
+
+### Development Guidelines
+
+- Follow Flutter best practices and style guide
+- Write meaningful commit messages
+- Add tests for new features
+- Update documentation as needed
+- Ensure code passes all linting rules
 
 ## 📄 License
-This project is proprietary and confidential. All rights reserved.
 
-## 👥 Support
-For support, please contact the development team or raise an issue in the repository.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 📱 Application Screens
+## 🆘 Support
 
-### Authentication Screens
-- Login Screen
-- Registration Screen
-- Password Reset Screen
-- Email Verification Screen
+- **Documentation**: Check the [docs/](docs/) directory
+- **Issues**: Create an issue on GitHub
+- **Email**: [your-email@example.com]
+- **Discord**: [Join our community]
 
-### Admin Screens (Implemented)
-- Admin Dashboard
-  - Overview of all projects
-  - Active projects count
-  - Low-stock materials monitoring
-  - Recent project activities
-  - Pending actions
-  - Real-time notifications
-  - Activity log
-- User Management
-  - User listing
-  - User role assignment
-  - User status management
-- Project Management
-  - Project creation and editing
-  - Project status updates
-  - Project assignment
-  - Project timeline management
-- BOM Management
-  - BOM creation
-  - Material tracking
-  - Cost management
-  - Inventory alerts
-- System Settings
-  - Application configuration
-  - User permissions
-  - System preferences
+## 🔄 Changelog
 
-### Project Manager Screens (Implemented)
-- Project Manager Dashboard
-  - Assigned projects overview
-  - Project metrics
-  - Low-stock materials alerts
-  - Pending requests
-  - Recent notifications
-  - Project status updates
-- Project Details
-  - Project information
-  - Team management
-  - Resource allocation
-  - Progress tracking
-  - Budget monitoring
-- BOM Management
-  - Material requirements
-  - Cost tracking
-  - Inventory management
-  - Purchase requests
-- Team Management
-  - Team member assignment
-  - Task distribution
-  - Performance tracking
-  - Resource allocation
+### Version 1.0.0 (Current)
+- ✅ Firebase integration with real-time synchronization
+- ✅ Role-based authentication system
+- ✅ Project management dashboard
+- ✅ Bill of Materials (BOM) management
+- ✅ Real-time chat and notifications
+- ✅ Cross-platform support (iOS, Android, Web)
+- ✅ Offline capability
+- ✅ Firebase data export scripts
+- ✅ Comprehensive documentation
 
-### Project Management Screens
-- Project Dashboard
-- Project Details
-- Project Timeline
-- Project Documents
-- Project Team
-- Project Budget
-- Project Reports
+### Upcoming Features
+- 📊 Advanced analytics dashboard
+- 📈 Enhanced reporting features
+- 🔧 Mobile app optimization
+- 🔗 Additional third-party integrations
+- 🧪 Automated testing suite
+- ⚡ Performance optimization
 
-### BOM Screens
-- BOM Creation
-- BOM List
-- BOM Details
-- Material Management
-- Cost Analysis
+---
 
-### Purchase Management Screens
-- Purchase Orders
-- Vendor Management
-- Purchase History
-- Cost Tracking
-- Budget Analysis
-
-### Productivity Screens
-- Time Tracking
-- Team Performance
-- Daily Reports
-- Efficiency Analysis
-
-### Report Screens
-- Report Generation
-- Data Visualization
-- Export Options
-- Custom Reports
-
-### Settings Screens
-- User Profile
-- Application Settings
-- Notification Settings
-- System Preferences
+<div align="center">
+  <p>Built with ❤️ using Flutter and Firebase</p>
+  <p>Made for construction professionals</p>
+</div>

@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/notification_model.dart';
 import '../utils/dev_data.dart';
+import 'package:flutter/material.dart';
 
 class NotificationService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -29,10 +30,9 @@ class NotificationService {
         .limit(10) // Limit to most recent 10
         .snapshots()
         .map(
-          (snapshot) =>
-              snapshot.docs
-                  .map((doc) => NotificationModel.fromFirestore(doc))
-                  .toList(),
+          (snapshot) => snapshot.docs
+              .map((doc) => NotificationModel.fromFirestore(doc))
+              .toList(),
         );
   }
 
@@ -70,12 +70,11 @@ class NotificationService {
     }
 
     try {
-      final snapshot =
-          await _firestore
-              .collection('notifications')
-              .where('userId', whereIn: [userId, 'all'])
-              .where('isRead', isEqualTo: false)
-              .get();
+      final snapshot = await _firestore
+          .collection('notifications')
+          .where('userId', whereIn: [userId, 'all'])
+          .where('isRead', isEqualTo: false)
+          .get();
 
       return snapshot.docs.length;
     } catch (e) {
@@ -127,5 +126,35 @@ class NotificationService {
     } catch (e) {
       print('Error creating notification: $e');
     }
+  }
+
+  // Helper: Trigger low-stock notification for a project manager
+  Future<void> triggerLowStockNotification({
+    required String userId,
+    required String projectId,
+    required String materialName,
+    required double remaining,
+    required double threshold,
+  }) async {
+    await createNotification(
+      title: 'Low Stock Alert',
+      message:
+          'Low Stock: $materialName in project. $remaining remaining, below threshold $threshold.',
+      type: NotificationType.lowStock,
+      userId: userId,
+      projectId: projectId,
+    );
+  }
+
+  // Helper: Show in-app snackbar for action confirmation
+  static void showActionSnackbar(BuildContext context, String message,
+      {bool success = true}) {
+    final color = success ? Colors.green : Colors.red;
+    final snackBar = SnackBar(
+      content: Text(message),
+      backgroundColor: color,
+      duration: const Duration(seconds: 2),
+    );
+    ScaffoldMessenger.of(context).showSnackBar(snackBar);
   }
 }

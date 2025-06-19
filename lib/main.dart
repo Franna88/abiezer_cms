@@ -10,7 +10,10 @@ import 'providers/bom_provider.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/main/main_screen.dart';
 import 'screens/admin/project_details_screen.dart';
+import 'screens/admin/projects/add_project_screen.dart';
 import 'utils/app_theme.dart';
+import 'features/bom/screens/project_overview_screen.dart';
+import 'models/project_model.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -48,6 +51,12 @@ class MyApp extends StatelessWidget {
                 final project = ModalRoute.of(context)?.settings.arguments;
                 return const ProjectDetailsScreen();
               },
+              '/pm/project-details': (context) {
+                final project =
+                    ModalRoute.of(context)!.settings.arguments as ProjectModel;
+                return ProjectOverviewScreen(project: project);
+              },
+              '/admin/add-project': (context) => const AddProjectScreen(),
             },
             debugShowCheckedModeBanner: false,
           );

@@ -57,6 +57,14 @@ class ProjectsProvider with ChangeNotifier {
     required List<String> projectManagerIds,
     required String createdBy,
     required String description,
+    String? clientName,
+    String? clientPhone,
+    String? clientEmail,
+    String? clientCompany,
+    bool? isCommercial,
+    double? budget,
+    String? budgetCurrency,
+    List<String> documentUrls = const [],
   }) async {
     try {
       // Check if user is authenticated
@@ -75,6 +83,14 @@ class ProjectsProvider with ChangeNotifier {
         'project_manager_ids': projectManagerIds,
         'created_at': Timestamp.fromDate(DateTime.now()),
         'created_by': createdBy,
+        'client_name': clientName,
+        'client_phone': clientPhone,
+        'client_email': clientEmail,
+        'client_company': clientCompany,
+        'is_commercial': isCommercial,
+        'budget': budget,
+        'budget_currency': budgetCurrency,
+        'document_urls': documentUrls,
       };
 
       final docRef = await _firestore.collection('projects').add(projectData);
@@ -90,6 +106,14 @@ class ProjectsProvider with ChangeNotifier {
         projectManagerIds: projectManagerIds,
         createdAt: DateTime.now(),
         createdBy: createdBy,
+        clientName: clientName,
+        clientPhone: clientPhone,
+        clientEmail: clientEmail,
+        clientCompany: clientCompany,
+        isCommercial: isCommercial,
+        budget: budget,
+        budgetCurrency: budgetCurrency,
+        documentUrls: documentUrls,
       );
 
       _projects.add(newProject);

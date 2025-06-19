@@ -5,91 +5,96 @@ class ProjectCard extends StatelessWidget {
   final ProjectModel project;
   final bool isAssigned;
   final List<String> managerNames;
-  final VoidCallback? onViewBOM;
+  final VoidCallback? onTap;
+  final Widget? quickActions;
 
   const ProjectCard({
     Key? key,
     required this.project,
     required this.isAssigned,
     required this.managerNames,
-    this.onViewBOM,
+    this.onTap,
+    this.quickActions,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.all(4),
-      elevation: 1,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    project.name,
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
+    return InkWell(
+      onTap: isAssigned ? onTap : null,
+      borderRadius: BorderRadius.circular(10),
+      child: Card(
+        margin: const EdgeInsets.all(4),
+        elevation: 1,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      project.name,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
-                ),
-                _buildStatusChip(project.status),
-                if (!isAssigned) ...[
+                  _buildStatusChip(project.status),
                   const SizedBox(width: 8),
-                  Tooltip(
-                    message: 'You are not assigned to this project',
-                    child: const Icon(Icons.lock_outline,
-                        color: Colors.grey, size: 20),
+                  isAssigned
+                      ? Tooltip(
+                          message: 'You have access to this project',
+                          child: const Icon(Icons.verified_user,
+                              color: Colors.green, size: 20),
+                        )
+                      : Tooltip(
+                          message: 'You are not assigned to this project',
+                          child: const Icon(Icons.lock_outline,
+                              color: Colors.grey, size: 20),
+                        ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              _buildInfoRow(Icons.location_on, project.location),
+              const SizedBox(height: 4),
+              _buildInfoRow(
+                Icons.calendar_today,
+                _formatDateRange(project.startDate, project.endDate),
+              ),
+              if (project.description.isNotEmpty) ...[
+                const SizedBox(height: 4),
+                _buildInfoRow(Icons.description, project.description,
+                    maxLines: 1),
+              ],
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  const Icon(Icons.person, size: 16, color: Colors.grey),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: Text(
+                      managerNames.isNotEmpty
+                          ? managerNames.join(', ')
+                          : 'No Project Manager Assigned',
+                      style: const TextStyle(
+                          fontSize: 13, fontStyle: FontStyle.italic),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
                 ],
-              ],
-            ),
-            const SizedBox(height: 8),
-            _buildInfoRow(Icons.location_on, project.location),
-            const SizedBox(height: 4),
-            _buildInfoRow(
-              Icons.calendar_today,
-              _formatDateRange(project.startDate, project.endDate),
-            ),
-            if (project.description.isNotEmpty) ...[
-              const SizedBox(height: 4),
-              _buildInfoRow(Icons.description, project.description,
-                  maxLines: 1),
-            ],
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                const Icon(Icons.person, size: 16, color: Colors.grey),
-                const SizedBox(width: 4),
-                Expanded(
-                  child: Text(
-                    managerNames.isNotEmpty
-                        ? managerNames.join(', ')
-                        : 'No Project Manager Assigned',
-                    style: const TextStyle(
-                        fontSize: 13, fontStyle: FontStyle.italic),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
-            ),
-            const Spacer(),
-            if (isAssigned && onViewBOM != null)
-              Align(
-                alignment: Alignment.bottomRight,
-                child: ElevatedButton(
-                  onPressed: onViewBOM,
-                  child: const Text('View BOM'),
-                ),
               ),
-          ],
+              if (quickActions != null) ...[
+                const SizedBox(height: 12),
+                quickActions!,
+              ],
+            ],
+          ),
         ),
       ),
     );

@@ -1,8 +1,10 @@
 import 'package:flutter/foundation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../models/project_model.dart';
 import '../models/bom_item_model.dart';
 import '../models/user_model.dart';
+import 'user_provider.dart';
 
 class ProjectProvider with ChangeNotifier {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -16,8 +18,7 @@ class ProjectProvider with ChangeNotifier {
   // Getters
   List<ProjectModel> get allProjects => _allProjects;
   List<ProjectModel> get userProjects => _userProjects;
-  List<ProjectModel> get assignedProjects =>
-      _userProjects; // Alias for userProjects
+  List<ProjectModel> get assignedProjects => _userProjects;
   bool get isLoading => _isLoading;
   String get error => _error;
 
@@ -49,23 +50,35 @@ class ProjectProvider with ChangeNotifier {
   }
 
   // Load assigned projects (for project managers)
-  Future<void> loadAssignedProjects() async {
+  Future<void> loadAssignedProjects(List<String> assignedProjectIds) async {
     _isLoading = true;
     _error = '';
     notifyListeners();
 
     try {
-      final snapshot = await _firestore
-          .collection('projects')
-          .where('projectManagers', arrayContains: _currentUserId)
-          // .orderBy('name')  // Temporarily removed until index is created
-          .get();
+      if (assignedProjectIds.isEmpty) {
+        _userProjects = [];
+        notifyListeners();
+        return;
+      }
 
-      _userProjects =
-          snapshot.docs.map((doc) => ProjectModel.fromFirestore(doc)).toList();
+      // Fetch projects in batches to avoid query limitations
+      List<ProjectModel> projects = [];
+      for (var i = 0; i < assignedProjectIds.length; i += 10) {
+        final batch = assignedProjectIds.skip(i).take(10).toList();
+        final snapshot = await _firestore
+            .collection('projects')
+            .where(FieldPath.documentId, whereIn: batch)
+            .get();
 
-      // Sort the projects in memory instead
-      _userProjects.sort((a, b) => a.name.compareTo(b.name));
+        projects.addAll(
+          snapshot.docs.map((doc) => ProjectModel.fromFirestore(doc)).toList(),
+        );
+      }
+
+      // Sort projects by name
+      projects.sort((a, b) => a.name.compareTo(b.name));
+      _userProjects = projects;
 
       notifyListeners();
     } catch (e) {
@@ -109,7 +122,7 @@ class ProjectProvider with ChangeNotifier {
       return;
     }
 
-    await loadAssignedProjects();
+    await loadAssignedProjects(user.assignedProjects);
   }
 
   // Set selected project
@@ -122,12 +135,6 @@ class ProjectProvider with ChangeNotifier {
   void resetError() {
     _error = '';
     notifyListeners();
-  }
-
-  // Helper method to get current user ID
-  String get _currentUserId {
-    // TODO: Implement proper user ID retrieval from auth
-    return 'current_user_id';
   }
 
   // Log material usage
@@ -157,7 +164,7 @@ class ProjectProvider with ChangeNotifier {
       'note': note,
       'photoUrl': photoUrl,
       'timestamp': FieldValue.serverTimestamp(),
-      'userId': _currentUserId,
+      'userId': FirebaseAuth.instance.currentUser?.uid,
     });
   }
 
@@ -177,7 +184,23 @@ class ProjectProvider with ChangeNotifier {
       'photoUrl': photoUrl,
       'status': 'pending',
       'timestamp': FieldValue.serverTimestamp(),
-      'userId': _currentUserId,
+      'userId': FirebaseAuth.instance.currentUser?.uid,
     });
+  }
+
+  // Fetch projects assigned to a specific project manager
+  Future<List<ProjectModel>> fetchAssignedProjects(String userId) async {
+    try {
+      final snapshot = await _firestore
+          .collection('projects')
+          .where('project_manager_ids', arrayContains: userId)
+          .get();
+      return snapshot.docs
+          .map((doc) => ProjectModel.fromFirestore(doc))
+          .toList();
+    } catch (e) {
+      print('Error fetching assigned projects: $e');
+      return [];
+    }
   }
 }

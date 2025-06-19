@@ -5,7 +5,7 @@ import '../../providers/user_provider.dart';
 import '../../models/project.dart';
 import '../../utils/app_theme.dart';
 import '../../utils/responsive.dart';
-import 'projects/add_project_dialog.dart';
+import 'projects/add_project_screen.dart';
 import '../../services/bom_service.dart';
 import '../../services/user_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -36,11 +36,20 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
     super.dispose();
   }
 
-  void _showAddProjectDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => const AddProjectDialog(),
+  void _navigateToAddProject() async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const AddProjectScreen(),
+      ),
     );
+
+    // Refresh projects list if a new project was created
+    if (result == true) {
+      if (mounted) {
+        Provider.of<ProjectsProvider>(context, listen: false).loadProjects();
+      }
+    }
   }
 
   @override
@@ -68,7 +77,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                       ),
                 ),
                 ElevatedButton.icon(
-                  onPressed: _showAddProjectDialog,
+                  onPressed: _navigateToAddProject,
                   icon: const Icon(Icons.add),
                   label: const Text('Add Project'),
                   style: ElevatedButton.styleFrom(
