@@ -67,20 +67,56 @@ class _AddProjectScreenState extends State<AddProjectScreen> {
   }
 
   Future<void> _loadProjectManagers() async {
+    print('🔄 Loading project managers...');
     setState(() => _isLoadingManagers = true);
+
     try {
       final managers = await _userService.getProjectManagers();
+      print('✅ Loaded ${managers.length} project managers: $managers');
+
       setState(() {
         _projectManagers = managers;
         _isLoadingManagers = false;
       });
+
+      if (managers.isEmpty) {
+        print('⚠️ No project managers found in the system');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text(
+                  'No project managers found. You can still create the project and assign managers later.'),
+              backgroundColor: Colors.orange,
+              duration: const Duration(seconds: 4),
+              action: SnackBarAction(
+                label: 'OK',
+                textColor: Colors.white,
+                onPressed: () {
+                  ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                },
+              ),
+            ),
+          );
+        }
+      }
     } catch (e) {
+      print('❌ Error loading project managers: $e');
       setState(() => _isLoadingManagers = false);
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error loading project managers: $e'),
             backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
+            action: SnackBarAction(
+              label: 'Retry',
+              textColor: Colors.white,
+              onPressed: () {
+                ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                _loadProjectManagers(); // Retry loading
+              },
+            ),
           ),
         );
       }
@@ -191,12 +227,18 @@ class _AddProjectScreenState extends State<AddProjectScreen> {
   bool _canProceedToNextStep() {
     switch (_currentStep) {
       case 0: // Project Details
-        return _nameController.text.isNotEmpty &&
+        final basicFieldsValid = _nameController.text.isNotEmpty &&
             _locationController.text.isNotEmpty &&
             _descriptionController.text.isNotEmpty &&
             _startDate != null &&
-            _endDate != null &&
-            _selectedProjectManagers.isNotEmpty;
+            _endDate != null;
+
+        // Only require project managers if they are available
+        // If no managers are loaded, allow proceeding without selection
+        final managersRequirement =
+            _projectManagers.isEmpty || _selectedProjectManagers.isNotEmpty;
+
+        return basicFieldsValid && managersRequirement;
       case 1: // Client Details
         if (_skipClientDetails) return true;
         final basicDetailsValid = _clientNameController.text.isNotEmpty &&
@@ -220,11 +262,15 @@ class _AddProjectScreenState extends State<AddProjectScreen> {
   }
 
   void _handleSubmit() async {
+    print('🚀 Starting project creation process...');
+    print('📋 Form validation: ${_formKey.currentState?.validate() ?? false}');
+
     if (_formKey.currentState?.validate() ?? false) {
       setState(() => _isLoading = true);
 
       try {
         final userProvider = Provider.of<UserProvider>(context, listen: false);
+        print('👤 Current user: ${userProvider.user?.id}');
 
         if (userProvider.user == null) {
           throw Exception('You must be logged in to create a project');
@@ -256,6 +302,14 @@ class _AddProjectScreenState extends State<AddProjectScreen> {
         }
 
         // Create project with all the data
+        print('💾 Creating project with data:');
+        print('   Name: ${_nameController.text}');
+        print('   Location: ${_locationController.text}');
+        print('   Start Date: $_startDate');
+        print('   End Date: $_endDate');
+        print('   Selected Managers: $_selectedProjectManagers');
+        print('   Image URL: $imageUrl');
+
         await projectsProvider.createProject(
           name: _nameController.text,
           location: _locationController.text,
@@ -280,6 +334,8 @@ class _AddProjectScreenState extends State<AddProjectScreen> {
                   : null),
           documentUrls: documentUrls,
         );
+
+        print('✅ Project created successfully!');
 
         if (mounted) {
           Navigator.of(context).pop(true);
@@ -638,17 +694,35 @@ class _AddProjectScreenState extends State<AddProjectScreen> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              border: Border.all(color: Colors.grey.shade300),
+              border: Border.all(color: Colors.orange.shade300),
               borderRadius: BorderRadius.circular(8),
-              color: Colors.grey.shade50,
+              color: Colors.orange.shade50,
             ),
-            child: Row(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(Icons.info_outline, color: Colors.grey.shade600),
-                const SizedBox(width: 8),
+                Row(
+                  children: [
+                    Icon(Icons.info_outline, color: Colors.orange.shade700),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'No project managers available',
+                        style: TextStyle(
+                          color: Colors.orange.shade700,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
                 Text(
-                  'No project managers available',
-                  style: TextStyle(color: Colors.grey.shade600),
+                  'You can still create the project and assign managers later.',
+                  style: TextStyle(
+                    color: Colors.orange.shade600,
+                    fontSize: 13,
+                  ),
                 ),
               ],
             ),

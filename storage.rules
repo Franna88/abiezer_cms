@@ -1,0 +1,66 @@
+rules_version = '2';
+
+// Firebase Storage Security Rules for Abiezer CMS
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    // Helper function to check if user is authenticated
+    function isAuth() {
+      return request.auth != null;
+    }
+    
+    // Helper function to check if user is admin
+    function isAdmin() {
+      return isAuth() && 
+        firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+    
+    // Helper function to check if user is assigned to a project
+    function isAssignedToProject(projectId) {
+      return isAuth() && 
+        projectId in firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.assignedProjects;
+    }
+    
+    // Usage photos: Allow project members to upload/read photos for materials
+    match /usage_photos/{projectId}/{materialId}/{fileName} {
+      allow read: if isAuth() && (isAdmin() || isAssignedToProject(projectId));
+      allow write: if isAuth() && (isAdmin() || isAssignedToProject(projectId));
+      allow delete: if isAuth() && (isAdmin() || isAssignedToProject(projectId));
+    }
+    
+    // Request photos: Allow project members to upload/read request photos
+    match /request_photos/{projectId}/{materialId}/{fileName} {
+      allow read: if isAuth() && (isAdmin() || isAssignedToProject(projectId));
+      allow write: if isAuth() && (isAdmin() || isAssignedToProject(projectId));
+      allow delete: if isAuth() && (isAdmin() || isAssignedToProject(projectId));
+    }
+    
+    // Project documents: Allow project members to upload/read documents
+    match /project_documents/{projectName}/{fileName} {
+      allow read: if isAuth();
+      allow write: if isAuth();
+      allow delete: if isAdmin();
+    }
+    
+    // Project images: Allow project members to upload/read project images
+    match /project_images/{projectName}/{fileName} {
+      allow read: if isAuth();
+      allow write: if isAuth();
+      allow delete: if isAdmin();
+    }
+    
+    // General file uploads: Allow authenticated users to upload files
+    match /uploads/{userId}/{fileName} {
+      allow read: if isAuth() && (request.auth.uid == userId || isAdmin());
+      allow write: if isAuth() && request.auth.uid == userId;
+      allow delete: if isAuth() && (request.auth.uid == userId || isAdmin());
+    }
+    
+    // Temporary files: Allow authenticated users to upload temporary files
+    match /temp/{fileName} {
+      allow read: if isAuth();
+      allow write: if isAuth();
+      allow delete: if isAuth();
+    }
+  }
+} 

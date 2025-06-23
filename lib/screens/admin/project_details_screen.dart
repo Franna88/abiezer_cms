@@ -17,12 +17,37 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../services/storage_service.dart';
 import '../../services/project_service.dart';
+import '../../providers/user_provider.dart';
+import '../../services/image_upload_service.dart';
+import '../../widgets/common/upload_progress_indicator.dart';
+import 'package:provider/provider.dart';
 
 class ProjectDetailsScreen extends StatefulWidget {
   const ProjectDetailsScreen({super.key});
 
   @override
   State<ProjectDetailsScreen> createState() => _ProjectDetailsScreenState();
+}
+
+enum UploadState {
+  idle,
+  uploading,
+  success,
+  error,
+}
+
+class ActivityItem {
+  final String id;
+  final String description;
+  final DateTime timestamp;
+  final String type;
+
+  ActivityItem({
+    required this.id,
+    required this.description,
+    required this.timestamp,
+    required this.type,
+  });
 }
 
 class _ProjectDetailsScreenState extends State<ProjectDetailsScreen>
@@ -52,6 +77,12 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen>
   List<Map<String, dynamic>> _documents = [];
   bool _isUploadingDocument = false;
 
+  // Upload state management
+  UploadState _uploadState = UploadState.idle;
+  double _uploadProgress = 0.0;
+  String? _uploadError;
+  String? _currentUploadId;
+
   @override
   void initState() {
     super.initState();
@@ -61,6 +92,10 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen>
   @override
   void dispose() {
     _tabController.dispose();
+    // Cancel any active upload
+    if (_currentUploadId != null) {
+      ImageUploadService.cancelUpload(_currentUploadId!);
+    }
     super.dispose();
   }
 
@@ -128,11 +163,10 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen>
       final activities = activitiesSnapshot.docs.map((doc) {
         final data = doc.data();
         return ActivityItem(
-          title: data['title'] ?? '',
+          id: doc.id,
           description: data['description'] ?? '',
-          time: _formatTimestamp(data['timestamp'] as Timestamp),
-          icon: _getActivityIcon(data['type'] ?? ''),
-          color: _getActivityColor(data['type'] ?? ''),
+          timestamp: data['timestamp']?.toDate() ?? DateTime.now(),
+          type: data['type'] ?? '',
         );
       }).toList();
 
@@ -543,13 +577,7 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen>
                   value: project!.endDate.toString().split(' ')[0],
                 ),
                 const Divider(height: 1),
-                _buildDetailRow(
-                  icon: Icons.person_outline,
-                  label: 'Project Managers',
-                  value: _projectManagers.isEmpty
-                      ? 'Loading...'
-                      : _projectManagers.map((m) => m.name).join(', '),
-                ),
+                _buildProjectManagersRow(),
                 const Divider(height: 1),
                 if (project!.budget != null)
                   _buildDetailRow(
@@ -586,57 +614,23 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen>
       width: 200,
       child: Column(
         children: [
-          if (_isUploadingImage)
-            const SizedBox(
+          // Upload state handling
+          if (_uploadState == UploadState.uploading)
+            SizedBox(
               height: 200,
-              child: Center(child: CircularProgressIndicator()),
+              child: UploadProgressIndicator(
+                progress: _uploadProgress,
+                onCancel: _cancelUpload,
+                statusText: 'Uploading project image...',
+              ),
             )
+          else if (_uploadState == UploadState.error)
+            _buildErrorState()
           else if (project?.projectImageUrl != null &&
               project!.projectImageUrl!.isNotEmpty)
-            ClipRRect(
-              borderRadius: BorderRadius.circular(8.0),
-              child: CachedNetworkImage(
-                imageUrl: project!.projectImageUrl!,
-                height: 200,
-                width: double.infinity,
-                fit: BoxFit.cover,
-                placeholder: (context, url) =>
-                    const Center(child: CircularProgressIndicator()),
-                errorWidget: (context, url, error) => const Icon(Icons.error),
-              ),
-            )
+            _buildImageDisplay()
           else
-            InkWell(
-              onTap: _pickAndUploadImage,
-              borderRadius: BorderRadius.circular(8),
-              child: Container(
-                height: 200,
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade100,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.grey.shade300),
-                ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.add_a_photo_outlined,
-                      size: 48,
-                      color: Theme.of(context).primaryColor,
-                    ),
-                    const SizedBox(height: 12),
-                    const Text(
-                      'Add Project Image',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
+            _buildImagePlaceholder(),
         ],
       ),
     );
@@ -1428,49 +1422,408 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen>
     }
   }
 
-  Future<void> _pickAndUploadImage() async {
-    final XFile? image =
-        await _imagePicker.pickImage(source: ImageSource.gallery);
+  Future<void> _uploadProjectImage() async {
+    try {
+      // Step 1: Pick image with validation
+      final XFile? imageFile = await _imagePicker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 2048,
+        maxHeight: 2048,
+        imageQuality: 85,
+      );
 
-    if (image != null && project != null) {
+      if (imageFile == null) {
+        print('No image selected');
+        return;
+      }
+
+      if (project == null) {
+        _showErrorSnackBar('No project selected');
+        return;
+      }
+
+      // Step 2: Generate unique upload ID
+      _currentUploadId =
+          'project_${project!.id}_${DateTime.now().millisecondsSinceEpoch}';
+
+      // Step 3: Update UI to uploading state
       setState(() {
-        _isUploadingImage = true;
+        _uploadState = UploadState.uploading;
+        _uploadProgress = 0.0;
+        _uploadError = null;
       });
 
-      try {
-        final imageUrl = await _storageService.uploadProjectImage(
-          image,
-          project!.name,
-        );
+      // Step 4: Start upload with progress tracking
+      final result = await ImageUploadService.uploadProjectImage(
+        imageFile: imageFile,
+        projectName: project!.name,
+        uploadId: _currentUploadId!,
+        onProgress: (progress) {
+          if (mounted) {
+            setState(() {
+              _uploadProgress = progress;
+            });
+          }
+        },
+      );
 
-        await _projectService.updateProjectImageUrl(project!.id, imageUrl);
+      // Step 5: Handle result
+      if (result.success && result.downloadUrl != null) {
+        await _handleUploadSuccess(result.downloadUrl!);
+      } else {
+        await _handleUploadError(result.error ?? 'Unknown upload error');
+      }
+    } catch (e) {
+      await _handleUploadError('Unexpected error: $e');
+    } finally {
+      _currentUploadId = null;
+    }
+  }
 
+  Future<void> _handleUploadSuccess(String downloadUrl) async {
+    try {
+      // Update project in Firestore
+      await _projectService.updateProjectImageUrl(project!.id, downloadUrl);
+
+      // Update local project state
+      setState(() {
+        project!.projectImageUrl = downloadUrl;
+        _uploadState = UploadState.success;
+      });
+
+      // Show success message
+      _showSuccessSnackBar('Project image uploaded successfully!');
+
+      // Reset state after delay
+      Future.delayed(const Duration(seconds: 2), () {
         if (mounted) {
           setState(() {
-            project!.projectImageUrl = imageUrl;
-            _isUploadingImage = false;
+            _uploadState = UploadState.idle;
           });
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Project image updated successfully!'),
-              backgroundColor: Colors.green,
-            ),
-          );
         }
-      } catch (e) {
-        if (mounted) {
-          setState(() {
-            _isUploadingImage = false;
-          });
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Error uploading image: $e'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
+      });
+    } catch (e) {
+      await _handleUploadError('Failed to save image: $e');
+    }
+  }
+
+  Future<void> _handleUploadError(String error) async {
+    setState(() {
+      _uploadState = UploadState.error;
+      _uploadError = error;
+    });
+
+    _showErrorSnackBar(error);
+
+    // Reset state after delay
+    Future.delayed(const Duration(seconds: 3), () {
+      if (mounted) {
+        setState(() {
+          _uploadState = UploadState.idle;
+          _uploadError = null;
+        });
+      }
+    });
+  }
+
+  Future<void> _cancelUpload() async {
+    if (_currentUploadId != null) {
+      final cancelled =
+          await ImageUploadService.cancelUpload(_currentUploadId!);
+      if (cancelled) {
+        setState(() {
+          _uploadState = UploadState.idle;
+          _uploadProgress = 0.0;
+          _uploadError = null;
+        });
+        _showInfoSnackBar('Upload cancelled');
       }
     }
+  }
+
+  Future<void> _deleteProjectImage() async {
+    if (project?.projectImageUrl == null) return;
+
+    try {
+      // Show confirmation dialog
+      final confirmed = await _showDeleteConfirmationDialog();
+      if (!confirmed) return;
+
+      // Delete from Firebase Storage
+      final deleted =
+          await ImageUploadService.deleteImage(project!.projectImageUrl!);
+
+      if (deleted) {
+        // Update project in Firestore
+        await _projectService.updateProjectImageUrl(project!.id, '');
+
+        // Update local state
+        setState(() {
+          project!.projectImageUrl = null;
+        });
+
+        _showSuccessSnackBar('Project image deleted successfully!');
+      } else {
+        _showErrorSnackBar('Failed to delete image');
+      }
+    } catch (e) {
+      _showErrorSnackBar('Error deleting image: $e');
+    }
+  }
+
+  Future<bool> _showDeleteConfirmationDialog() async {
+    return await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Delete Project Image'),
+            content: const Text(
+                'Are you sure you want to delete this image? This action cannot be undone.'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(true),
+                style: TextButton.styleFrom(foregroundColor: Colors.red),
+                child: const Text('Delete'),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+  }
+
+  Widget _buildErrorState() {
+    return Container(
+      height: 200,
+      decoration: BoxDecoration(
+        color: Colors.red.shade50,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.red.shade200),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.error_outline,
+            size: 48,
+            color: Colors.red.shade400,
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'Upload Failed',
+            style: TextStyle(
+              fontWeight: FontWeight.w600,
+              color: Colors.red.shade700,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Text(
+              _uploadError ?? 'Unknown error',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.red.shade600,
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          const SizedBox(height: 12),
+          TextButton(
+            onPressed: _uploadProjectImage,
+            child: const Text('Try Again'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildImageDisplay() {
+    return Stack(
+      children: [
+        ClipRRect(
+          borderRadius: BorderRadius.circular(8.0),
+          child: CachedNetworkImage(
+            imageUrl: project!.projectImageUrl!,
+            height: 200,
+            width: double.infinity,
+            fit: BoxFit.cover,
+            placeholder: (context, url) => Container(
+              height: 200,
+              color: Colors.grey.shade100,
+              child: const Center(
+                child: CircularProgressIndicator(),
+              ),
+            ),
+            errorWidget: (context, url, error) => Container(
+              height: 200,
+              color: Colors.grey.shade100,
+              child: const Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.error_outline, size: 32),
+                  SizedBox(height: 8),
+                  Text('Failed to load image'),
+                ],
+              ),
+            ),
+          ),
+        ),
+
+        // Action buttons overlay
+        Positioned(
+          top: 8,
+          right: 8,
+          child: Row(
+            children: [
+              CircleAvatar(
+                radius: 16,
+                backgroundColor: Colors.black.withOpacity(0.6),
+                child: IconButton(
+                  onPressed: _uploadProjectImage,
+                  icon: const Icon(Icons.edit, size: 16),
+                  color: Colors.white,
+                  tooltip: 'Change image',
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                ),
+              ),
+              const SizedBox(width: 8),
+              CircleAvatar(
+                radius: 16,
+                backgroundColor: Colors.red.withOpacity(0.8),
+                child: IconButton(
+                  onPressed: _deleteProjectImage,
+                  icon: const Icon(Icons.delete, size: 16),
+                  color: Colors.white,
+                  tooltip: 'Delete image',
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildImagePlaceholder() {
+    return InkWell(
+      onTap: _uploadProjectImage,
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        height: 200,
+        width: double.infinity,
+        decoration: BoxDecoration(
+          color: Colors.grey.shade100,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.grey.shade300),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.add_a_photo_outlined,
+              size: 48,
+              color: Theme.of(context).primaryColor,
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              'Add Project Image',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Tap to upload',
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey.shade600,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildProjectManagersRow() {
+    String displayText;
+    if (_projectManagers.isEmpty) {
+      displayText = 'Loading...';
+    } else {
+      displayText = _projectManagers.map((m) => m.name).join(', ');
+    }
+
+    return _buildInfoRow('Project Managers', displayText);
+  }
+
+  Widget _buildInfoRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 120,
+            child: Text(
+              label,
+              style: const TextStyle(
+                fontWeight: FontWeight.w600,
+                color: Colors.grey,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showSuccessSnackBar(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.green,
+        duration: const Duration(seconds: 3),
+      ),
+    );
+  }
+
+  void _showErrorSnackBar(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
+        duration: const Duration(seconds: 4),
+      ),
+    );
+  }
+
+  void _showInfoSnackBar(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        duration: const Duration(seconds: 2),
+      ),
+    );
   }
 }
 

@@ -20,14 +20,30 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   NavTab _selectedTab = NavTab.dashboard;
+  bool _hasInitialized = false;
 
   @override
   void initState() {
     super.initState();
-    _loadInitialData();
+    // Don't call provider methods in initState
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    // Initialize data only once and only after dependencies are ready
+    if (!_hasInitialized) {
+      _hasInitialized = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _loadInitialData();
+      });
+    }
   }
 
   Future<void> _loadInitialData() async {
+    if (!mounted) return;
+
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     final projectProvider = Provider.of<ProjectProvider>(
       context,
