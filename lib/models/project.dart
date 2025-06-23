@@ -8,7 +8,7 @@ class Project {
   final DateTime startDate;
   final DateTime endDate;
   final String status;
-  final List<String> projectManagerIds;
+  List<String> projectManagerIds;
   final DateTime createdAt;
   final String createdBy;
 
@@ -21,10 +21,10 @@ class Project {
 
   // New fields for budget
   final double? budget;
-  final String? budgetCurrency;
 
   // New fields for documents
   final List<String> documentUrls;
+  String? projectImageUrl;
 
   Project({
     required this.id,
@@ -43,8 +43,8 @@ class Project {
     this.clientCompany,
     this.isCommercial,
     this.budget,
-    this.budgetCurrency,
     this.documentUrls = const [],
+    this.projectImageUrl,
   });
 
   factory Project.fromFirestore(DocumentSnapshot doc) {
@@ -66,8 +66,8 @@ class Project {
       clientCompany: data['client_company'],
       isCommercial: data['is_commercial'],
       budget: data['budget']?.toDouble(),
-      budgetCurrency: data['budget_currency'],
       documentUrls: List<String>.from(data['document_urls'] ?? []),
+      projectImageUrl: data['projectImageUrl'],
     );
   }
 
@@ -88,8 +88,8 @@ class Project {
       'client_company': clientCompany,
       'is_commercial': isCommercial,
       'budget': budget,
-      'budget_currency': budgetCurrency,
       'document_urls': documentUrls,
+      'projectImageUrl': projectImageUrl,
     };
   }
 }

@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import '../../../providers/projects_provider.dart';
 import '../../../providers/user_provider.dart';
 import '../../../utils/app_theme.dart';
@@ -44,9 +47,10 @@ class _AddProjectScreenState extends State<AddProjectScreen> {
 
   // Budget Estimate Controllers
   final _budgetController = TextEditingController();
-  String _budgetCurrency = 'USD';
+  String _budgetCurrency = 'ZAR';
 
-  // Project Documents
+  // Project Documents & Images
+  XFile? _projectImage;
   final List<File> _selectedDocuments = [];
 
   // State variables
@@ -120,6 +124,22 @@ class _AddProjectScreenState extends State<AddProjectScreen> {
     return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
   }
 
+  Future<void> _pickProjectImage() async {
+    final XFile? image =
+        await _imagePicker.pickImage(source: ImageSource.gallery);
+    if (image != null) {
+      setState(() {
+        _projectImage = image;
+      });
+    }
+  }
+
+  void _removeProjectImage() {
+    setState(() {
+      _projectImage = null;
+    });
+  }
+
   Future<void> _pickDocuments() async {
     final List<XFile> images = await _imagePicker.pickMultiImage();
     if (images.isNotEmpty) {
@@ -179,14 +199,19 @@ class _AddProjectScreenState extends State<AddProjectScreen> {
             _selectedProjectManagers.isNotEmpty;
       case 1: // Client Details
         if (_skipClientDetails) return true;
-        return _clientNameController.text.isNotEmpty &&
+        final basicDetailsValid = _clientNameController.text.isNotEmpty &&
             _clientPhoneController.text.isNotEmpty &&
             _clientEmailController.text.isNotEmpty;
+        if (_isCommercial) {
+          return basicDetailsValid && _clientCompanyController.text.isNotEmpty;
+        }
+        return basicDetailsValid;
       case 2: // Budget Estimate
         if (_skipBudgetEstimate) return true;
-        return _budgetController.text.isEmpty ||
-            (double.tryParse(_budgetController.text) != null &&
-                double.parse(_budgetController.text) > 0);
+        if (_budgetController.text.isEmpty) return true;
+        final cleanString = _budgetController.text.replaceAll(',', '');
+        final budgetValue = double.tryParse(cleanString);
+        return budgetValue != null && budgetValue >= 0;
       case 3: // Project Documents
         return true; // Always can proceed, documents are optional
       default:
@@ -220,6 +245,16 @@ class _AddProjectScreenState extends State<AddProjectScreen> {
           }
         }
 
+        // Upload project images
+        String? imageUrl;
+        if (_projectImage != null) {
+          final url = await _storageService.uploadProjectImage(
+            _projectImage!,
+            _nameController.text,
+          );
+          imageUrl = url;
+        }
+
         // Create project with all the data
         await projectsProvider.createProject(
           name: _nameController.text,
@@ -230,6 +265,7 @@ class _AddProjectScreenState extends State<AddProjectScreen> {
           status: _status,
           projectManagerIds: _selectedProjectManagers,
           createdBy: userProvider.user?.id ?? '',
+          projectImageUrl: imageUrl,
           // Additional fields (you may need to update your model and provider)
           clientName: _skipClientDetails ? null : _clientNameController.text,
           clientPhone: _skipClientDetails ? null : _clientPhoneController.text,
@@ -240,9 +276,8 @@ class _AddProjectScreenState extends State<AddProjectScreen> {
           budget: _skipBudgetEstimate
               ? null
               : (_budgetController.text.isNotEmpty
-                  ? double.parse(_budgetController.text)
+                  ? double.parse(_budgetController.text.replaceAll(',', ''))
                   : null),
-          budgetCurrency: _skipBudgetEstimate ? null : _budgetCurrency,
           documentUrls: documentUrls,
         );
 
@@ -412,6 +447,7 @@ class _AddProjectScreenState extends State<AddProjectScreen> {
         // Project Name
         TextFormField(
           controller: _nameController,
+          onChanged: (_) => setState(() {}),
           decoration: const InputDecoration(
             labelText: 'Project Name *',
             hintText: 'Enter project name',
@@ -430,6 +466,7 @@ class _AddProjectScreenState extends State<AddProjectScreen> {
         // Location
         TextFormField(
           controller: _locationController,
+          onChanged: (_) => setState(() {}),
           decoration: const InputDecoration(
             labelText: 'Location *',
             hintText: 'Enter project location',
@@ -448,6 +485,7 @@ class _AddProjectScreenState extends State<AddProjectScreen> {
         // Description
         TextFormField(
           controller: _descriptionController,
+          onChanged: (_) => setState(() {}),
           maxLines: 4,
           decoration: const InputDecoration(
             labelText: 'Description *',
@@ -463,6 +501,10 @@ class _AddProjectScreenState extends State<AddProjectScreen> {
             return null;
           },
         ),
+        const SizedBox(height: 24),
+
+        // Project Image
+        _buildImagePicker(),
         const SizedBox(height: 24),
 
         // Date Selection
@@ -514,21 +556,28 @@ class _AddProjectScreenState extends State<AddProjectScreen> {
         // Status
         DropdownButtonFormField<String>(
           value: _status,
-          decoration: const InputDecoration(
-            labelText: 'Status',
-            border: OutlineInputBorder(),
-            prefixIcon: Icon(Icons.flag),
-          ),
-          items: const [
-            DropdownMenuItem(value: 'Active', child: Text('Active')),
-            DropdownMenuItem(value: 'Pending', child: Text('Pending')),
-            DropdownMenuItem(value: 'On Hold', child: Text('On Hold')),
-          ],
           onChanged: (value) {
             if (value != null) {
               setState(() => _status = value);
             }
           },
+          decoration: const InputDecoration(
+            labelText: 'Status',
+            border: OutlineInputBorder(),
+            prefixIcon: Icon(Icons.flag),
+          ),
+          items: <String>[
+            'Active',
+            'Pending',
+            'On Hold',
+            'Completed',
+            'Cancelled'
+          ].map<DropdownMenuItem<String>>((String value) {
+            return DropdownMenuItem<String>(
+              value: value,
+              child: Text(value),
+            );
+          }).toList(),
         ),
         const SizedBox(height: 32),
 
@@ -608,6 +657,99 @@ class _AddProjectScreenState extends State<AddProjectScreen> {
     );
   }
 
+  Widget _buildImagePicker() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Project Image',
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+        ),
+        const SizedBox(height: 8),
+        Center(
+          child: _projectImage == null
+              ? InkWell(
+                  onTap: _pickProjectImage,
+                  borderRadius: BorderRadius.circular(8),
+                  child: Container(
+                    height: 150,
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade100,
+                      border:
+                          Border.all(color: Colors.grey.shade400, width: 1.5),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.add_a_photo_outlined,
+                          size: 40,
+                          color: Theme.of(context).primaryColor,
+                        ),
+                        const SizedBox(height: 8),
+                        const Text(
+                          'Add Project Image',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              : Container(
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade100,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: kIsWeb
+                            ? Image.network(
+                                _projectImage!.path,
+                                fit: BoxFit.contain,
+                                height: 150,
+                                width: double.infinity,
+                              )
+                            : Image.file(
+                                File(_projectImage!.path),
+                                fit: BoxFit.contain,
+                                height: 150,
+                                width: double.infinity,
+                              ),
+                      ),
+                      Positioned(
+                        top: 4,
+                        right: 4,
+                        child: InkWell(
+                          onTap: _removeProjectImage,
+                          child: Container(
+                            decoration: const BoxDecoration(
+                              color: Colors.red,
+                              shape: BoxShape.circle,
+                            ),
+                            padding: const EdgeInsets.all(4),
+                            child: const Icon(
+                              Icons.close,
+                              color: Colors.white,
+                              size: 18,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildClientDetailsStep() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -621,14 +763,6 @@ class _AddProjectScreenState extends State<AddProjectScreen> {
                       fontWeight: FontWeight.bold,
                       color: AppTheme.primaryColor,
                     ),
-              ),
-            ),
-            TextButton.icon(
-              onPressed: _skipStep,
-              icon: const Icon(Icons.skip_next),
-              label: const Text('Skip'),
-              style: TextButton.styleFrom(
-                foregroundColor: Colors.grey.shade600,
               ),
             ),
           ],
@@ -645,6 +779,7 @@ class _AddProjectScreenState extends State<AddProjectScreen> {
         // Client Name
         TextFormField(
           controller: _clientNameController,
+          onChanged: (_) => setState(() {}),
           decoration: const InputDecoration(
             labelText: 'Client Name',
             hintText: 'Enter client name',
@@ -657,6 +792,7 @@ class _AddProjectScreenState extends State<AddProjectScreen> {
         // Client Phone
         TextFormField(
           controller: _clientPhoneController,
+          onChanged: (_) => setState(() {}),
           decoration: const InputDecoration(
             labelText: 'Phone Number',
             hintText: 'Enter phone number',
@@ -669,6 +805,7 @@ class _AddProjectScreenState extends State<AddProjectScreen> {
         // Client Email
         TextFormField(
           controller: _clientEmailController,
+          onChanged: (_) => setState(() {}),
           decoration: const InputDecoration(
             labelText: 'Email Address',
             hintText: 'Enter email address',
@@ -696,8 +833,9 @@ class _AddProjectScreenState extends State<AddProjectScreen> {
         if (_isCommercial) ...[
           TextFormField(
             controller: _clientCompanyController,
+            onChanged: (_) => setState(() {}),
             decoration: const InputDecoration(
-              labelText: 'Company Name',
+              labelText: 'Company Name *',
               hintText: 'Enter company name',
               border: OutlineInputBorder(),
               prefixIcon: Icon(Icons.business),
@@ -724,14 +862,6 @@ class _AddProjectScreenState extends State<AddProjectScreen> {
                     ),
               ),
             ),
-            TextButton.icon(
-              onPressed: _skipStep,
-              icon: const Icon(Icons.skip_next),
-              label: const Text('Skip'),
-              style: TextButton.styleFrom(
-                foregroundColor: Colors.grey.shade600,
-              ),
-            ),
           ],
         ),
         const SizedBox(height: 8),
@@ -742,43 +872,19 @@ class _AddProjectScreenState extends State<AddProjectScreen> {
               ),
         ),
         const SizedBox(height: 32),
-        Row(
-          children: [
-            Expanded(
-              child: TextFormField(
-                controller: _budgetController,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                  labelText: 'Budget Amount',
-                  hintText: 'Enter budget amount',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.attach_money),
-                ),
-              ),
-            ),
-            const SizedBox(width: 16),
-            SizedBox(
-              width: 120,
-              child: DropdownButtonFormField<String>(
-                value: _budgetCurrency,
-                decoration: const InputDecoration(
-                  labelText: 'Currency',
-                  border: OutlineInputBorder(),
-                ),
-                items: const [
-                  DropdownMenuItem(value: 'USD', child: Text('USD')),
-                  DropdownMenuItem(value: 'EUR', child: Text('EUR')),
-                  DropdownMenuItem(value: 'GBP', child: Text('GBP')),
-                  DropdownMenuItem(value: 'CAD', child: Text('CAD')),
-                ],
-                onChanged: (value) {
-                  if (value != null) {
-                    setState(() => _budgetCurrency = value);
-                  }
-                },
-              ),
-            ),
+        TextFormField(
+          controller: _budgetController,
+          keyboardType: TextInputType.number,
+          onChanged: (_) => setState(() {}),
+          inputFormatters: <TextInputFormatter>[
+            ThousandsSeparatorInputFormatter(),
           ],
+          decoration: const InputDecoration(
+            labelText: 'Budget Amount',
+            hintText: 'Enter budget amount',
+            border: OutlineInputBorder(),
+            prefixText: 'R ',
+          ),
         ),
         const SizedBox(height: 16),
         Container(
@@ -821,14 +927,6 @@ class _AddProjectScreenState extends State<AddProjectScreen> {
                       fontWeight: FontWeight.bold,
                       color: AppTheme.primaryColor,
                     ),
-              ),
-            ),
-            TextButton.icon(
-              onPressed: _skipStep,
-              icon: const Icon(Icons.skip_next),
-              label: const Text('Skip'),
-              style: TextButton.styleFrom(
-                foregroundColor: Colors.grey.shade600,
               ),
             ),
           ],
@@ -921,6 +1019,8 @@ class _AddProjectScreenState extends State<AddProjectScreen> {
   }
 
   Widget _buildNavigationButtons() {
+    final bool isSkippable = _currentStep == 1 || _currentStep == 2;
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -937,33 +1037,49 @@ class _AddProjectScreenState extends State<AddProjectScreen> {
         else
           const SizedBox.shrink(),
 
-        // Next/Create Button
-        ElevatedButton.icon(
-          onPressed: _canProceedToNextStep()
-              ? (_currentStep == _totalSteps - 1 ? _handleSubmit : _nextStep)
-              : null,
-          icon: _isLoading
-              ? const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                  ),
-                )
-              : Icon(_currentStep == _totalSteps - 1
-                  ? Icons.check
-                  : Icons.arrow_forward),
-          label:
-              Text(_currentStep == _totalSteps - 1 ? 'Create Project' : 'Next'),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppTheme.primaryColor,
-            foregroundColor: Colors.white,
-            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
+        // Action Buttons (Right side)
+        Row(
+          children: [
+            // Skip Button
+            if (isSkippable)
+              TextButton(
+                onPressed: _skipStep,
+                child: const Text('Skip'),
+              ),
+            if (isSkippable) const SizedBox(width: 8),
+
+            // Next/Create Button
+            ElevatedButton.icon(
+              onPressed: _canProceedToNextStep()
+                  ? (_currentStep == _totalSteps - 1
+                      ? _handleSubmit
+                      : _nextStep)
+                  : null,
+              icon: _isLoading
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                    )
+                  : Icon(_currentStep == _totalSteps - 1
+                      ? Icons.check
+                      : Icons.arrow_forward),
+              label: Text(
+                  _currentStep == _totalSteps - 1 ? 'Create Project' : 'Next'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.primaryColor,
+                foregroundColor: Colors.white,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
             ),
-          ),
+          ],
         ),
       ],
     );
@@ -982,46 +1098,76 @@ class _AddProjectScreenState extends State<AddProjectScreen> {
           onPressed: () => Navigator.of(context).pop(),
         ),
       ),
-      body: Form(
-        key: _formKey,
-        child: Column(
-          children: [
-            _buildProgressBar(),
-            Expanded(
-              child: SingleChildScrollView(
-                padding: EdgeInsets.all(
-                  Responsive.getResponsiveValue(
-                    context: context,
-                    mobile: 16.0,
-                    tablet: 24.0,
-                    desktop: 32.0,
+      body: SafeArea(
+        child: Form(
+          key: _formKey,
+          child: Column(
+            children: [
+              _buildProgressBar(),
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: EdgeInsets.all(
+                    Responsive.getResponsiveValue(
+                      context: context,
+                      mobile: 16.0,
+                      tablet: 24.0,
+                      desktop: 32.0,
+                    ),
                   ),
-                ),
-                child: Center(
-                  child: Container(
-                    constraints: const BoxConstraints(maxWidth: 800),
-                    child: _buildStepContent(),
+                  child: Center(
+                    child: Container(
+                      constraints: const BoxConstraints(maxWidth: 800),
+                      child: _buildStepContent(),
+                    ),
                   ),
                 ),
               ),
-            ),
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.grey.shade300,
-                    blurRadius: 4,
-                    offset: const Offset(0, -2),
-                  ),
-                ],
+              Container(
+                padding: EdgeInsets.only(
+                  left: 16,
+                  right: 16,
+                  top: 12,
+                  bottom: MediaQuery.of(context).padding.bottom > 0 ? 8 : 16,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.shade300,
+                      blurRadius: 4,
+                      offset: const Offset(0, -2),
+                    ),
+                  ],
+                ),
+                child: _buildNavigationButtons(),
               ),
-              child: _buildNavigationButtons(),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
+    );
+  }
+}
+
+class ThousandsSeparatorInputFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+      TextEditingValue oldValue, TextEditingValue newValue) {
+    if (newValue.text.isEmpty) {
+      return newValue.copyWith(text: '');
+    }
+    final String digitsOnly = newValue.text.replaceAll(RegExp(r'[^\d]'), '');
+    if (digitsOnly.isEmpty) {
+      return const TextEditingValue(
+        text: '',
+        selection: TextSelection.collapsed(offset: 0),
+      );
+    }
+    final number = int.parse(digitsOnly);
+    final String newString = NumberFormat('#,###').format(number);
+    return TextEditingValue(
+      text: newString,
+      selection: TextSelection.collapsed(offset: newString.length),
     );
   }
 }

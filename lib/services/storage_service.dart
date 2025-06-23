@@ -94,6 +94,21 @@ class StorageService {
     }
   }
 
+  Future<String> uploadProjectImage(XFile file, String projectName) async {
+    try {
+      final fileName =
+          '${DateTime.now().millisecondsSinceEpoch}_${path.basename(file.path)}';
+      final ref = _storage.ref().child('project_images/$projectName/$fileName');
+
+      final uploadTask = ref.putData(await file.readAsBytes());
+      final snapshot = await uploadTask;
+      return await snapshot.ref.getDownloadURL();
+    } catch (e) {
+      print('Error uploading project image: $e');
+      rethrow;
+    }
+  }
+
   Future<void> deletePhoto(String photoUrl) async {
     try {
       final ref = _storage.refFromURL(photoUrl);

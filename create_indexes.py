@@ -21,6 +21,39 @@ def initialize_firebase(credentials_path: str):
 
 # Define the indexes we need to create
 indexes = [
+    # Project Activities collection indexes
+    {
+        "collectionGroup": "project_activities",
+        "queryScope": "COLLECTION",
+        "fields": [
+            {"fieldPath": "projectId", "order": "ASCENDING"},
+            {"fieldPath": "timestamp", "order": "DESCENDING"}
+        ]
+    },
+    {
+        "collectionGroup": "project_activities",
+        "queryScope": "COLLECTION",
+        "fields": [
+            {"fieldPath": "type", "order": "ASCENDING"},
+            {"fieldPath": "timestamp", "order": "DESCENDING"}
+        ]
+    },
+    # Project documents subcollection indexes
+    {
+        "collectionGroup": "documents",
+        "queryScope": "COLLECTION_GROUP",
+        "fields": [
+            {"fieldPath": "uploadedAt", "order": "DESCENDING"}
+        ]
+    },
+    {
+        "collectionGroup": "documents",
+        "queryScope": "COLLECTION_GROUP",
+        "fields": [
+            {"fieldPath": "uploadedBy", "order": "ASCENDING"},
+            {"fieldPath": "uploadedAt", "order": "DESCENDING"}
+        ]
+    },
     # Movements collection indexes
     {
         "collectionGroup": "movements",

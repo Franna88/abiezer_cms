@@ -144,4 +144,17 @@ class ProjectService {
       rethrow;
     }
   }
+
+  // Update project image URL
+  Future<void> updateProjectImageUrl(String projectId, String imageUrl) async {
+    try {
+      await _firestore
+          .collection('projects')
+          .doc(projectId)
+          .update({'projectImageUrl': imageUrl});
+    } catch (e) {
+      print('Error updating project image URL: $e');
+      rethrow;
+    }
+  }
 }
